@@ -1,0 +1,197 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    @apply bg-[#f5f5f5] text-black;
+    font-family: 'Outfit', 'Inter', sans-serif;
+    overflow-x: hidden;
+    background-color: #f5f5f5 !important;
+  }
+
+  /* ===== GLOBAL TEXT VISIBILITY FIX ===== */
+  h1, h2, h3, h4, h5, h6 {
+    color: inherit;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+
+  p, span, label, td, th {
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+}
+
+@layer utilities {
+  .form-input {
+    @apply w-full px-4 py-3 bg-white border border-slate-100 rounded-xl text-black text-sm outline-none transition-all duration-300;
+  }
+
+  .form-input:focus {
+    @apply border-black ring-2 ring-slate-100 bg-white;
+  }
+
+  .animate-fade {
+    animation: fadeIn 0.4s ease-out forwards;
+  }
+
+  .animate-fade-up {
+    animation: fadeUp 0.3s ease-out forwards;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* মূল কন্টেইনার */
+  .main-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding: 10px;
+  }
+
+  /* কার্ড ডিজাইন */
+  .ui-card {
+    @apply bg-white;
+    border-radius: 35px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    width: 95%;
+  }
+
+  .issue-work-btn {
+    @apply bg-black text-white font-bold cursor-pointer text-center;
+    border-radius: 50px;
+    padding: 15px 30px;
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 30px;
+    transition: all 0.2s ease;
+  }
+
+  .issue-work-btn:hover {
+    @apply opacity-90 scale-[1.02];
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* ডেস্কটপের জন্য */
+@media (min-width: 768px) {
+  .ui-card {
+    width: 600px;
+    padding: 40px;
+  }
+
+  .main-container {
+    padding-top: 50px;
+  }
+
+  .sidebar {
+    width: 80px;
+  }
+}
+
+/* ===== PROFESSIONAL PRINT STYLES ===== */
+@media print {
+  /* Hide screen elements */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Page setup - ink saving */
+  @page {
+    size: A4 portrait;
+    margin: 8mm;
+  }
+
+  /* Clean white background - no ink waste */
+  body {
+    background: white !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color: black !important;
+    font-size: 11pt;
+    line-height: 1.4;
+  }
+
+  /* Remove shadows to save ink */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Keep borders but thin */
+  .print-border {
+    border: 1px solid #000 !important;
+  }
+
+  /* Slip page break */
+  .page-break {
+    page-break-after: always;
+    break-after: always;
+  }
+
+  .page-break-before {
+    page-break-before: always;
+    break-before: always;
+  }
+
+  /* Avoid breaking inside a slip */
+  .print-keep-together {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Override bg-black to print - save ink with borders instead */
+  .print-ink-save {
+    background: transparent !important;
+    border: 2px solid black !important;
+    color: black !important;
+  }
+
+  /* Typography for print */
+  .font-black {
+    font-weight: 900;
+  }
+
+  /* Ensure table borders show */
+  table, th, td {
+    border-collapse: collapse;
+  }
+
+  /* Colored backgrounds for receipts - keep but light */
+  .bg-black.text-white {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
