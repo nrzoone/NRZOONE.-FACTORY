@@ -96,14 +96,25 @@ export const useMasterData = () => {
                 }
 
                 setMasterData(prev => {
-                    const updatedCloud = { ...cloud };
-                    if (!updatedCloud.users) updatedCloud.users = initialData.users;
-                    if (!updatedCloud.designs) updatedCloud.designs = initialData.designs;
-                    if (!updatedCloud.workerCategories) updatedCloud.workerCategories = initialData.workerCategories;
-
-                    const cloudStr = JSON.stringify(updatedCloud);
-                    if (JSON.stringify(prev) !== cloudStr) {
-                        return updatedCloud;
+                    const merged = { 
+                        ...initialData, 
+                        ...cloud,
+                        // Deep merge structured objects to prevent category loss
+                        workerCategories: { ...initialData.workerCategories, ...(cloud.workerCategories || {}) },
+                        workerWages: { ...initialData.workerWages, ...(cloud.workerWages || {}) },
+                        pataRates: { ...initialData.pataRates, ...(cloud.pataRates || {}) },
+                        // Explicitly ensure legacy lists are arrays
+                        designs: Array.isArray(cloud.designs) ? cloud.designs : initialData.designs,
+                        users: Array.isArray(cloud.users) ? cloud.users : initialData.users,
+                        colors: Array.isArray(cloud.colors) ? cloud.colors : initialData.colors,
+                        sizes: Array.isArray(cloud.sizes) ? cloud.sizes : initialData.sizes,
+                        cutters: Array.isArray(cloud.cutters) ? cloud.cutters : initialData.cutters,
+                        pataTypes: Array.isArray(cloud.pataTypes) ? cloud.pataTypes : initialData.pataTypes,
+                    };
+                    
+                    const mergedStr = JSON.stringify(merged);
+                    if (JSON.stringify(prev) !== mergedStr) {
+                        return merged;
                     }
                     return prev;
                 });

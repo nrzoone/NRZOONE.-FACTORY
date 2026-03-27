@@ -45,7 +45,7 @@ const PataFactoryPanel = ({ masterData, setMasterData, showNotify, user, setActi
         prods.forEach(p => {
             earnings += Number(p.amount || 0);
         });
-        const paid = (masterData.workerPayments || []).filter(p => p.worker === name && p.dept === 'pata').reduce((s, p) => s + Number(p.amount), 0);
+        const paid = (masterData.workerPayments || []).filter(p => p.worker === name && p.dept === 'pata').reduce((s, p) => s + Number(p.amount || 0), 0);
         return earnings - paid;
     };
 
@@ -207,7 +207,7 @@ const PataFactoryPanel = ({ masterData, setMasterData, showNotify, user, setActi
 
         setMasterData(prev => ({
             ...prev,
-            pataEntries: prev.pataEntries.map(e => e.id === item.id ? {
+            pataEntries: (prev.pataEntries || []).map(e => e.id === item.id ? {
                 ...e,
                 status: 'Received',
                 receivedQty: receivedQty,
@@ -253,7 +253,7 @@ const PataFactoryPanel = ({ masterData, setMasterData, showNotify, user, setActi
 
         setMasterData(prev => ({
             ...prev,
-            pataEntries: prev.pataEntries.map(ent => ent.id === updated.id ? updated : ent)
+            pataEntries: (prev.pataEntries || []).map(ent => ent.id === updated.id ? updated : ent)
         }));
 
         setEditPataModal(null);
@@ -534,7 +534,7 @@ const PataFactoryPanel = ({ masterData, setMasterData, showNotify, user, setActi
                 {workers.map((w, idx) => {
                     const due = getWorkerDue(w);
                     return (
-                        <div key={idx} className="bg-white p-10 rounded-[4rem] border border-slate-100 flex flex-col justify-between h-72 group hover:border-black transition-all relative overflow-hidden shadow-sm">
+                        <div key={idx} className="premium-card flex flex-col justify-between h-72 group relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity">
                                 <DollarSign size={140} className="text-black" />
                             </div>
