@@ -452,79 +452,74 @@ const AttendancePanel = ({
 
   return (
     <div className="space-y-6 md:space-y-8 pb-24 animate-fade-up px-2 italic text-black font-outfit">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+        <div className="flex items-center gap-6">
           <button
             onClick={() => setActivePanel("Overview")}
-            className="p-3 bg-white text-black rounded-xl border-2 border-slate-100 shadow-md hover:bg-black hover:text-white transition-all"
+            className="w-12 h-12 flex items-center justify-center bg-white border border-slate-200 rounded-xl hover:bg-black hover:text-white transition-all shadow-sm"
           >
-            <ArrowLeft size={20} strokeWidth={3} />
+            <ArrowLeft size={20} />
           </button>
           <div>
-            <h2 className="text-xl md:text-3xl font-black uppercase italic tracking-tighter leading-none text-black">
+            <h2 className="section-header">
               হাজিরা <span className="text-slate-400">ও বেতন</span>
             </h2>
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
-              Workforce Attendance Hub
+            <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em] mt-2 italic">
+               Workforce Attendance Hub
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="flex gap-2 bg-slate-50 p-1 rounded-xl border border-slate-100">
+
+        <div className="flex items-center gap-6 w-full md:w-auto">
+          <div className="flex gap-2 bg-white p-1 rounded-2xl border border-slate-100 shadow-sm">
             <button
               onClick={() => setViewMode("attendance")}
-              className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${viewMode === "attendance" ? "bg-black text-white shadow-md" : "text-slate-500 hover:text-black"}`}
+              className={`pill-tab ${viewMode === "attendance" ? "pill-tab-active" : "pill-tab-inactive hover:text-black"}`}
             >
               হাজিরা
             </button>
             <button
               onClick={() => setViewMode("duty")}
-              className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${viewMode === "duty" ? "bg-black text-white shadow-md" : "text-slate-500 hover:text-black"}`}
+              className={`pill-tab ${viewMode === "duty" ? "pill-tab-active" : "pill-tab-inactive hover:text-black"}`}
             >
               Duty Logs
             </button>
           </div>
-          <div className="bg-white px-4 py-2 rounded-xl border border-slate-100 shadow-sm text-right min-w-[100px]">
-            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
-              WAGES
-            </p>
-            <p className="text-base md:text-lg font-black italic tracking-tighter text-black leading-tight">
-              ৳{stats.wages.toLocaleString()}
+          <div className="bg-white px-6 py-3 rounded-2xl border border-slate-100 shadow-sm text-right hidden md:block">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Daily Wages</p>
+            <p className="text-2xl font-black italic text-black leading-none uppercase">
+                ৳{stats.wages.toLocaleString()}
             </p>
           </div>
         </div>
       </div>
+Line 498: 
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
-        <div className="bg-white p-5 md:p-6 rounded-xl md:rounded-3xl border-2 md:border-4 border-slate-50 shadow-2xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 md:p-8 text-slate-50 -mr-2 md:-mr-4 -mt-2 md:-mt-4 group-hover:rotate-12 transition-transform opacity-10">
+        <div className="bg-white p-6 md:p-8 rounded-[3rem] border-4 border-slate-50 shadow-2xl relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-8 text-slate-50 opacity-10 group-hover:rotate-12 transition-transform">
             <Calendar size={120} strokeWidth={3} />
           </div>
-          <label className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase ml-4 md:ml-6 block tracking-widest mb-1 md:mb-2">
-            Calendar Access
-          </label>
+          <label className="text-[10px] font-black text-slate-400 uppercase ml-6 block tracking-[0.2em] mb-2 italic">Calendar Access</label>
           <input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-full text-3xl md:text-3xl font-black italic border-none outline-none bg-transparent text-black"
+            className="w-full text-3xl md:text-4xl font-black italic border-none outline-none bg-transparent text-black"
           />
-          <p className="mt-4 md:mt-8 ml-4 md:ml-6 text-sm md:text-xl font-black text-slate-100 uppercase tracking-widest italic">
+          <p className="mt-8 ml-6 text-sm md:text-xl font-black text-slate-200 uppercase tracking-widest italic">
             {getBengaliDay(selectedDate)} • {formatBengaliDate(selectedDate)}
           </p>
         </div>
-        <div className="bg-white p-5 md:p-6 rounded-xl md:rounded-3xl border-2 md:border-4 border-slate-50 shadow-2xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 p-4 md:p-8 text-slate-50 -mr-2 md:-mr-4 -mt-2 md:-mt-4 group-hover:-rotate-12 transition-transform opacity-10">
+        <div className="bg-white p-6 md:p-8 rounded-[3rem] border-4 border-slate-50 shadow-2xl relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-8 text-slate-50 opacity-10 group-hover:-rotate-12 transition-transform">
             <Users size={120} strokeWidth={3} />
           </div>
-          <label className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase ml-4 md:ml-6 block tracking-widest mb-1 md:mb-2">
-            Operational Dept
-          </label>
+          <label className="text-[10px] font-black text-slate-400 uppercase ml-6 block tracking-[0.2em] mb-2 italic">Operational Dept</label>
           <select
             value={selectedDepartment}
             onChange={(e) => setSelectedDepartment(e.target.value)}
-            className="w-full text-2xl md:text-2xl font-black italic border-none outline-none bg-transparent uppercase text-black"
+            className="w-full text-2xl md:text-3xl font-black italic border-none outline-none bg-transparent uppercase text-black"
           >
             <option value="sewing">সুইং সেকশন</option>
             <option value="stone">স্টোন সেকশন</option>
@@ -536,110 +531,83 @@ const AttendancePanel = ({
 
       {viewMode === "attendance" ? (
         <div className="space-y-4">
-          {/* Stat Row */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="bg-white p-4 md:p-6 rounded-2xl border border-slate-100 shadow-sm">
-              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">
-                মোট কর্মী
-              </p>
-              <p className="text-3xl font-black tracking-tighter text-black leading-none">
-                {workers.length}
-              </p>
-              <p className="text-[8px] font-bold text-slate-400 uppercase mt-1">
-                Active Staff
-              </p>
+            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1 italic">মোট কর্মী (Total)</p>
+              <p className="text-3xl font-black tracking-tighter text-black leading-none italic">{workers.length}</p>
+              <p className="text-[8px] font-black text-slate-400 uppercase mt-2 italic tracking-widest">Active Staff</p>
             </div>
-            <div className="bg-emerald-50 p-4 md:p-6 rounded-2xl border border-emerald-100 shadow-sm">
-              <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1">
-                উপস্থিত
-              </p>
-              <p className="text-3xl font-black tracking-tighter text-emerald-600 leading-none">
-                {stats.present}
-              </p>
-              <p className="text-[8px] font-bold text-emerald-400 uppercase mt-1">
-                {stats.halfDay} Half-Day
-              </p>
+            <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 shadow-sm">
+              <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1 italic">উপস্থিত (Present)</p>
+              <p className="text-3xl font-black tracking-tighter text-emerald-600 leading-none italic">{stats.present}</p>
+              <p className="text-[8px] font-black text-emerald-400 uppercase mt-2 italic tracking-widest">{stats.halfDay} Half-Day</p>
             </div>
             <button
               onClick={() => setShowInvoice(true)}
-              className="bg-black text-white p-4 md:p-6 rounded-2xl shadow-md hover:scale-[1.02] transition-all text-left"
+              className="bg-black text-white p-6 rounded-2xl shadow-xl hover:scale-[1.02] transition-all text-left group"
             >
-              <Printer size={16} className="mb-2 text-white/60" />
-              <p className="text-[9px] font-black text-white/60 uppercase tracking-widest mb-1">
-                সাপ্তাহিক
-              </p>
-              <p className="text-sm font-black uppercase leading-tight">
-                Wage Statement
-              </p>
+              <Printer size={16} className="mb-3 text-white/40 group-hover:text-white transition-colors" />
+              <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-1 italic">সাপ্তাহিক (Weekly)</p>
+              <p className="text-sm font-black uppercase leading-tight italic">Wage Statement</p>
             </button>
             <button
               onClick={() => setShowDailyPrint(true)}
-              className="bg-white p-4 md:p-6 rounded-2xl border border-slate-100 shadow-sm hover:bg-black hover:text-white transition-all text-left group"
+              className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:border-black transition-all text-left group"
             >
-              <UserCheck
-                size={16}
-                className="mb-2 text-slate-400 group-hover:text-white/60"
-              />
-              <p className="text-[9px] font-black text-slate-400 group-hover:text-white/60 uppercase tracking-widest mb-1">
-                দৈনিক
-              </p>
-              <p className="text-sm font-black uppercase leading-tight">
-                Attendance Sheet
-              </p>
+              <UserCheck size={16} className="mb-3 text-slate-300 group-hover:text-black transition-colors" />
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">দৈনিক (Daily)</p>
+              <p className="text-sm font-black uppercase leading-tight italic">Attendance Sheet</p>
             </button>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-md overflow-hidden p-4 md:p-6">
-            <div className="grid grid-cols-1 gap-2">
-              {workers.length === 0 ? (
-                <div className="col-span-full py-32 flex flex-col items-center justify-center opacity-10">
-                  <AlertCircle size={80} />
-                  <p className="text-2xl font-black uppercase mt-4">
-                    No Workers Configured
-                  </p>
+          <div className="grid grid-cols-1 gap-4">
+            {workers.length === 0 ? (
+                <div className="h-64 flex flex-col items-center justify-center bg-white rounded-3xl border-2 border-dashed border-slate-100 opacity-40">
+                  <AlertCircle size={48} strokeWidth={1} />
+                  <p className="text-[10px] font-black uppercase tracking-[0.4em] mt-6">Zero Workers Found</p>
                 </div>
-              ) : (
+            ) : (
                 workers.map((worker, idx) => {
                   const status = getAttendance(worker);
                   const wage = getWorkerWage(worker);
                   return (
                     <div
                       key={idx}
-                      className="bg-white p-4 md:p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-3 hover:shadow-md hover:border-black/10 transition-all"
+                      className="item-card flex flex-col md:flex-row justify-between items-center gap-6 group"
                     >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 bg-black text-white rounded-xl font-black text-base flex items-center justify-center shrink-0 tracking-tighter italic">
+                      <div className="flex items-center gap-6 flex-1 w-full md:w-auto">
+                        <div className="w-14 h-14 bg-slate-50 flex items-center justify-center text-2xl font-black italic rounded-xl border border-slate-100 shadow-inner group-hover:bg-black group-hover:text-white transition-all transform group-hover:rotate-6">
                           {worker[0].toUpperCase()}
                         </div>
-                        <div className="min-w-0">
-                          <h4 className="text-base md:text-lg font-black italic uppercase leading-none text-black truncate">
+                        <div className="space-y-1">
+                          <h4 className="text-xl font-black italic uppercase leading-none tracking-tighter text-black">
                             {worker}
                           </h4>
-                          <p className="text-[12px] font-black text-slate-500 uppercase tracking-widest mt-1 italic">
-                            ৳{wage.toLocaleString()} / দিন
+                          <p className="text-slate-400 text-[11px] font-black uppercase italic tracking-widest leading-none mt-1">
+                            • Daily Rate: ৳{wage.toLocaleString()}
                           </p>
                         </div>
                       </div>
+
                       <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-100 shrink-0">
                         {["present", "half-day", "absent"].map((s) => (
-                          <button
+                           <button
                             key={s}
                             onClick={() => markAttendance(worker, s)}
-                            className={`px-3 py-2 rounded-lg text-[9px] font-black uppercase tracking-wide transition-all ${status === s ? (s === "present" ? "bg-emerald-500 text-white shadow-md" : s === "half-day" ? "bg-amber-500 text-white shadow-md" : "bg-rose-500 text-white shadow-md") : "text-slate-400 hover:text-black hover:bg-white"}`}
+                            className={`px-6 py-3 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${
+                                status === s 
+                                ? (s === "present" ? "bg-emerald-500 text-white shadow-lg" : s === "half-day" ? "bg-amber-500 text-white shadow-lg" : "bg-rose-500 text-white shadow-lg") 
+                                : "text-slate-400 hover:text-black hover:bg-white"
+                            }`}
                           >
-                            {s === "present"
-                              ? "✓ আসছে"
-                              : s === "half-day"
-                                ? "½ হাফ"
-                                : "✗ নাই"}
+                            {s === "present" ? "✓ আসছে" : s === "half-day" ? "½ হাফ" : "✗ নাই"}
                           </button>
                         ))}
                       </div>
                     </div>
                   );
                 })
-              )}
-            </div>
+            )}
           </div>
         </div>
       ) : (

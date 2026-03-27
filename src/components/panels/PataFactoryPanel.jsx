@@ -650,14 +650,14 @@ const PataFactoryPanel = ({ masterData, setMasterData, showNotify, user, setActi
                             <div className="p-4 md:p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center bg-gray-50 flex-shrink-0 gap-3">
                                 <div className="flex items-center gap-4 md:gap-6">
                                     <div className="p-3 md:p-4 bg-black text-white rounded-[1rem] md:rounded-[1.5rem] shadow-xl rotate-2">
-                                        <Plus size={20} md:size={28} strokeWidth={2.5} />
+                                        <Plus size={28} strokeWidth={2.5} />
                                     </div>
                                     <div>
                                         <h3 className="font-black uppercase text-xl md:text-3xl tracking-tighter leading-none">Pata Issue</h3>
                                         <p className="text-[8px] md:text-[9px] text-slate-600 font-black uppercase tracking-[0.2em] md:tracking-[0.4em] mt-1 md:mt-2 italic">Worker Assignment Hub</p>
                                     </div>
                                 </div>
-                                <button onClick={() => setShowModal(false)} className="p-3 md:p-4 bg-white border border-slate-100 rounded-full hover:bg-black hover:text-white transition-all text-black shadow-sm"><X size={18} md:size={24} /></button>
+                                <button onClick={() => setShowModal(false)} className="p-3 md:p-4 bg-white border border-slate-100 rounded-full hover:bg-black hover:text-white transition-all text-black shadow-sm"><X size={24} /></button>
                             </div>
 
                             {/* Live Material Monitor */}
@@ -803,8 +803,8 @@ const PataFactoryPanel = ({ masterData, setMasterData, showNotify, user, setActi
                                 {/* Group 3: Final Quantity */}
                                 <div className="bg-black p-6 md:p-8 rounded-[2rem] shadow-xl text-center space-y-4 md:space-y-6 relative overflow-hidden">
                                     <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
-                                        <div className="absolute top-4 left-4"><Grid size={40} md:size={60} /></div>
-                                        <div className="absolute bottom-4 right-4"><Grid size={40} md:size={60} /></div>
+                                        <div className="absolute top-4 left-4"><Grid size={60} /></div>
+                                        <div className="absolute bottom-4 right-4"><Grid size={60} /></div>
                                     </div>
                                     <label className="text-[10px] md:text-sm font-black text-amber-500 uppercase tracking-[0.2em] md:tracking-[0.5em] italic">৩. মোট পরিমাণ দিন (Total Quantity)</label>
                                     <div className="relative">
@@ -1091,7 +1091,7 @@ const PataFactoryPanel = ({ masterData, setMasterData, showNotify, user, setActi
                     <div className="absolute -inset-1 bg-black/5 blur-2xl rounded-full -z-10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 </button>
             </div>
-        </div >
+        </div>
     );
 };
 
