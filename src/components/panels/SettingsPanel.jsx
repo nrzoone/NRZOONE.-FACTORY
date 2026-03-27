@@ -1403,6 +1403,7 @@ const SettingsPanel = ({
                 value={newWorkerDept}
                 onChange={(e) => setNewWorkerDept(e.target.value)}
               >
+                <option value="cutting">Cutting Dept / Master</option>
                 <option value="sewing">Sewing Dept</option>
                 <option value="stone">Stone Dept</option>
                 <option value="pata">Pata Dept</option>
