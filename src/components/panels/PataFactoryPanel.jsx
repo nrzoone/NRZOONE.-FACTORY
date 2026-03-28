@@ -1,4 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { Card, Row, Col, Typography, Divider, QRCode, Tag, ConfigProvider } from 'antd';
+const { Title, Text } = Typography;
+
+const QR_Slip_Theme = {
+  token: { fontFamily: 'Inter, sans-serif', borderRadius: 8, fontSize: 12, colorTextBase: '#000000' },
+  components: { Card: { paddingLG: 16 }, Typography: { fontSizeHeading4: 18, fontSizeHeading5: 14 } }
+};
+
 import { Grid, Plus, Trash2, Box, X, Search, Scissors, CheckCircle, Minus, Printer, ArrowLeft, Settings, DollarSign, History } from 'lucide-react';
 import { syncToSheet } from '../../utils/syncUtils';
 import logoWhite from '../../assets/logo_white.png';
@@ -323,115 +331,125 @@ const PataFactoryPanel = ({ masterData, setMasterData, showNotify, user, setActi
         const rate = masterData.pataRates?.[printSlip.pataType] || 0;
 
         const SlipHalf = ({ copyTitle }) => (
-            <div className="w-full h-full flex-1 border-[6px] border-black bg-white relative overflow-hidden flex text-black" style={{ minHeight: '140mm' }}>
-                {/* Side Branding Bar */}
-                <div className="w-20 bg-black flex flex-col items-center justify-between py-8 shrink-0">
-                    <img src={logoWhite} alt="NRZO0NE" className="w-12 h-12 object-contain" />
-                    <div className="rotate-[-90deg] whitespace-nowrap">
-                        <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/40">NRZO0NE PATA HUB</p>
-                    </div>
-                    <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
-                        <div className="w-4 h-4 rounded-full bg-amber-500 animate-pulse"></div>
-                    </div>
-                </div>
-
-                <div className="flex-1 p-8 flex flex-col relative font-outfit italic">
-                    {/* Watermark Logo */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] -rotate-12 pointer-events-none">
-                        <img src={logoBlack} alt="" className="w-80 h-80 object-contain" />
+            <ConfigProvider theme={QR_Slip_Theme}>
+                <div style={{ minHeight: '140mm' }} className="w-full flex-1 border-[6px] border-black bg-white relative overflow-hidden flex text-black">
+                    <div className="w-20 bg-white border-r-[3px] border-black flex flex-col items-center justify-between py-8 shrink-0">
+                        <img src={logoBlack} alt="NRZO0NE" className="w-12 h-12 object-contain" />
+                        <div className="rotate-[-90deg] whitespace-nowrap">
+                            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-black">NRZO0NE PATA HUB</p>
+                        </div>
+                        <div className="w-10 h-10 border-2 border-black rounded-full flex items-center justify-center">
+                            <div className="w-4 h-4 rounded-full bg-black animate-pulse"></div>
+                        </div>
                     </div>
 
-                    <div className="relative z-10 w-full h-full flex flex-col gap-4">
-                        <div className="flex items-center justify-between border-b-4 border-black pb-4">
-                            <div>
-                                <h1 className="text-5xl font-black italic tracking-tighter leading-none mb-1">NRZO0NE</h1>
-                                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">PATA HUB DIVISION</p>
-                            </div>
-                            <div className="text-right">
-                                <span className="inline-block bg-black text-white text-[9px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-2">{copyTitle}</span>
-                                <p className="text-xl font-black italic text-black tracking-tighter leading-none">{printSlip.date}</p>
-                            </div>
+                    <div className="flex-1 p-6 relative flex flex-col items-center justify-center bg-white">
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] -rotate-12 pointer-events-none">
+                            <img src={logoBlack} alt="" className="w-80 h-80 object-contain" />
                         </div>
+                        
+                        <Card 
+                            style={{ width: '100%', height: '100%', border: '2px solid #000', borderRadius: '12px', display: 'flex', flexDirection: 'column', zIndex: 10, position: 'relative' }}
+                            bodyStyle={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column' }}
+                            hoverable={false}
+                        >
+                            <Row justify="space-between" align="middle">
+                                <Col>
+                                    <Title level={4} style={{ margin: 0, letterSpacing: '1px', fontStyle: 'italic', fontWeight: '900' }}>NRZO0NE</Title>
+                                    <Text type="secondary" style={{ fontSize: '10px', letterSpacing: '2px', textTransform: 'uppercase' }}>PATA HUB DIVISION</Text>
+                                </Col>
+                                <Col style={{ textAlign: 'right' }}>
+                                    <Tag color="black" style={{ margin: 0, fontWeight: 'bold' }}>{copyTitle}</Tag>
+                                    <br />
+                                    <Text strong style={{ fontSize: '12px', display: 'inline-block', marginTop: '4px' }}>{printSlip.date}</Text>
+                                </Col>
+                            </Row>
 
-                        {/* Main Info */}
-                        <div className="grid grid-cols-3 gap-4">
-                            <div className="bg-slate-50 border-2 border-slate-100 px-4 py-3 rounded-2xl">
-                                <p className="text-[8px] font-black uppercase text-slate-400 mb-1">কারিগর (Worker)</p>
-                                <p className="text-xl font-black italic uppercase leading-tight">{printSlip.worker}</p>
-                            </div>
-                            <div className="bg-slate-50 border-2 border-slate-100 px-4 py-3 rounded-2xl">
-                                <p className="text-[8px] font-black uppercase text-slate-400 mb-1">ডিজাইন (Design)</p>
-                                <p className="text-xl font-black italic leading-tight">{printSlip.design}</p>
-                            </div>
-                            <div className="bg-black text-white px-4 py-3 rounded-2xl shadow-xl">
-                                <p className="text-[8px] font-black uppercase text-white/40 mb-1">লট নং (Lot No)</p>
-                                <p className="text-2xl font-black italic leading-tight">#{printSlip.lotNo}</p>
-                            </div>
-                        </div>
+                            <Divider style={{ margin: '14px 0', borderBlockStart: '2px solid #000' }} />
 
-                        {/* Secondary Info */}
-                        <div className="grid grid-cols-4 gap-3">
-                            <div className="bg-slate-50 border border-slate-100 px-3 py-2 rounded-xl text-center">
-                                <p className="text-[7px] font-black text-slate-400 uppercase">রঙ</p>
-                                <p className="text-xs font-black italic">{printSlip.color || '-'}</p>
-                            </div>
-                            <div className="bg-slate-50 border border-slate-100 px-3 py-2 rounded-xl text-center">
-                                <p className="text-[7px] font-black text-slate-400 uppercase">টাইপ</p>
-                                <p className="text-xs font-black italic">{printSlip.pataType || '-'}</p>
-                            </div>
-                            <div className="bg-amber-50 border border-amber-100 px-3 py-2 rounded-xl text-center">
-                                <p className="text-[7px] font-black text-amber-500 uppercase">মজুরি রেট</p>
-                                <p className="text-xs font-black italic text-amber-700">৳{rate}</p>
-                            </div>
-                            <div className={`border px-3 py-2 rounded-xl text-center ${isReceived ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
-                                <p className="text-[7px] font-black uppercase text-slate-400">অবস্থা</p>
-                                <p className={`text-[9px] font-black italic ${isReceived ? 'text-emerald-600' : 'text-amber-600'}`}>{printSlip.status}</p>
-                            </div>
-                        </div>
-
-                        {/* Qty - Premium Display */}
-                        <div className="bg-slate-800 text-white rounded-3xl p-6 flex flex-col items-center justify-center border-b-8 border-indigo-600/50 shadow-2xl flex-1 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:scale-110 transition-transform">
-                                <Box size={100} />
-                            </div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.6em] text-indigo-300/40 mb-4 z-10">TOTAL PRODUCTION QUANTITY</p>
-                            <div className="flex items-baseline gap-6 z-10">
-                                <p className="text-[100px] font-black italic leading-none tracking-tighter text-indigo-400 drop-shadow-[0_0_30px_rgba(129,140,248,0.3)]">{printSlip.pataQty}</p>
-                                {isReceived && (
-                                    <div className="flex flex-col items-center">
-                                        <ArrowRight size={40} className="text-indigo-600/50 mb-2" />
-                                        <p className="text-5xl font-black italic text-emerald-400 leading-none">{printSlip.receivedQty}</p>
+                            <Row gutter={12}>
+                                <Col span={8}>
+                                    <div style={{ background: '#f8f9fa', padding: '10px', borderRadius: '8px', textAlign: 'center', border: '1px solid #f0f0f0' }}>
+                                        <Text type="secondary" style={{ fontSize: '9px', fontWeight: 'bold', letterSpacing: '1px' }}>WORKER / কারিগর</Text>
+                                        <Title level={5} style={{ margin: '4px 0 0 0', fontStyle: 'italic', textTransform: 'uppercase' }}>{printSlip.worker}</Title>
                                     </div>
-                                )}
-                                <span className="text-2xl font-black uppercase text-zinc-500 italic tracking-[0.2em]">Pcs</span>
-                            </div>
-                        </div>
+                                </Col>
+                                <Col span={8}>
+                                    <div style={{ background: '#f8f9fa', padding: '10px', borderRadius: '8px', textAlign: 'center', border: '1px solid #f0f0f0' }}>
+                                        <Text type="secondary" style={{ fontSize: '9px', fontWeight: 'bold', letterSpacing: '1px' }}>DESIGN / ডিজাইন</Text>
+                                        <Title level={5} style={{ margin: '4px 0 0 0', fontStyle: 'italic' }}>{printSlip.design}</Title>
+                                    </div>
+                                </Col>
+                                <Col span={8}>
+                                    <div style={{ background: '#fff', padding: '10px', borderRadius: '8px', textAlign: 'center', border: '2px solid #000' }}>
+                                        <Text style={{ fontSize: '9px', color: '#000', letterSpacing: '1px', fontWeight: 'bold' }}>LOT NO / লট নং</Text>
+                                        <Title level={5} style={{ margin: '4px 0 0 0', color: '#000', fontStyle: 'italic', fontWeight: '900' }}>#{printSlip.lotNo}</Title>
+                                    </div>
+                                </Col>
+                            </Row>
 
-                        {/* Footer: QR + Security */}
-                        <div className="flex items-center justify-between border-t border-slate-100 pt-6 mt-auto">
-                            <div className="flex items-center gap-5">
-                                <div className="p-2 bg-white rounded-xl border-2 border-slate-50 shadow-lg">
-                                    <img
-                                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://nrzo0ne.vercel.app?track=${printSlip.id}`)}`}
-                                        alt="QR"
-                                        className="w-16 h-16"
-                                    />
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">NRZO0NE Smart Track™</p>
-                                    <p className="text-[8px] font-black text-slate-300 uppercase mt-1.5 italic opacity-60">ID: {printSlip.id}</p>
-                                </div>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-[8px] font-black text-slate-200 uppercase tracking-[0.3em] italic mb-2">OFFICIAL PRODUCTION HUB SLIP</p>
-                                <div className="flex gap-1.5 h-1.5 justify-end">
-                                    {Array.from({ length: 15 }).map((_, i) => <div key={i} className="w-1.5 h-full bg-slate-50"></div>)}
-                                </div>
-                            </div>
-                        </div>
+                            <Row gutter={12} style={{ marginTop: '16px' }}>
+                                <Col span={6}>
+                                    <div style={{ background: '#fafafa', padding: '8px', borderRadius: '8px', textAlign: 'center', border: '1px solid #e8e8e8' }}>
+                                        <Text style={{ fontSize: '9px', fontWeight: 'bold', color: '#8c8c8c' }}>COLOR</Text>
+                                        <Title level={5} style={{ margin: 0 }}>{printSlip.color || '-'}</Title>
+                                    </div>
+                                </Col>
+                                <Col span={6}>
+                                    <div style={{ background: '#fafafa', padding: '8px', borderRadius: '8px', textAlign: 'center', border: '1px solid #e8e8e8' }}>
+                                        <Text style={{ fontSize: '9px', fontWeight: 'bold', color: '#8c8c8c' }}>TYPE</Text>
+                                        <Title level={5} style={{ margin: 0 }}>{printSlip.pataType || '-'}</Title>
+                                    </div>
+                                </Col>
+                                <Col span={6}>
+                                    <div style={{ background: '#fffbe6', padding: '8px', borderRadius: '8px', textAlign: 'center', border: '1px solid #ffe58f' }}>
+                                        <Text style={{ fontSize: '9px', fontWeight: 'bold', color: '#faad14' }}>RATE</Text>
+                                        <Title level={5} style={{ margin: 0, color: '#d48806' }}>৳{rate}</Title>
+                                    </div>
+                                </Col>
+                                <Col span={6}>
+                                    <div style={{ background: isReceived ? '#f6ffed' : '#fffbe6', padding: '8px', borderRadius: '8px', textAlign: 'center', border: '1px solid ' + (isReceived ? '#b7eb8f' : '#ffe58f') }}>
+                                        <Text style={{ fontSize: '9px', fontWeight: 'bold', color: '#8c8c8c' }}>STATUS</Text>
+                                        <Title level={5} style={{ margin: 0, color: isReceived ? '#52c41a' : '#faad14' }}>{printSlip.status}</Title>
+                                    </div>
+                                </Col>
+                            </Row>
+
+                            <Row style={{ marginTop: '16px', flex: 1 }}>
+                                <Col span={24}>
+                                    <Card size="small" style={{ background: '#fff', border: '2px dashed #000', textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }} bodyStyle={{ padding: '16px' }}>
+                                        <Text style={{ fontSize: '9px', color: '#000', letterSpacing: '4px', fontWeight: 'bold' }}>TOTAL QUANTITY</Text>
+                                        <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'center', alignItems: 'baseline', gap: '16px' }}>
+                                            <Title level={1} style={{ margin: 0, color: '#818cf8', fontSize: '48px', fontStyle: 'italic', fontWeight: '900' }}>{printSlip.pataQty}</Title>
+                                            {isReceived && (
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                                    <span style={{ color: '#000', fontSize: '24px' }}>→</span>
+                                                    <Title level={2} style={{ margin: 0, color: '#52c41a', fontStyle: 'italic' }}>{printSlip.receivedQty}</Title>
+                                                </div>
+                                            )}
+                                            <Text style={{ color: '#000', fontSize: '16px', fontStyle: 'italic', fontWeight: 'bold' }}>Pcs</Text>
+                                        </div>
+                                    </Card>
+                                </Col>
+                            </Row>
+
+                            <Divider dashed style={{ margin: '16px 0 12px 0' }} />
+                            <Row align="middle" justify="space-between">
+                                <Col>
+                                    {typeof window !== 'undefined' && (
+                                        <QRCode value={`${window.location.origin}?track=${printSlip.id}`} size={110} bordered={false} style={{ margin: '-4px' }} color="#000" />
+                                    )}
+                                </Col>
+                                <Col style={{ textAlign: 'right' }}>
+                                    <Text style={{ fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px' }}>NRZO0NE SMART TRACK™</Text>
+                                    <br />
+                                    <Text type="secondary" style={{ fontSize: '9px' }}>Generated by NRZO0NE Pata Hub • ID: {printSlip.id}</Text>
+                                </Col>
+                            </Row>
+                        </Card>
                     </div>
                 </div>
-            </div>
+            </ConfigProvider>
         );
 
         return (

@@ -55,16 +55,19 @@ const GlobalStyles = () => (
   <style
     dangerouslySetInnerHTML={{
       __html: `
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Outfit:wght@400;500;700;900&display=swap');
 
         :root {
-            --font-outfit: 'Outfit', sans-serif;
-            --bg-main: #f8fafc;
+            --font-outfit: 'Outfit', 'Inter', -apple-system, sans-serif;
+            --bg-main: #f8f9fa;
             --bg-card: #ffffff;
             --primary: #000000;
-            --text-main: #000000;
+            --text-main: #1a1a1a;
             --text-muted: #64748b;
             --accent: #1e293b;
+            --control-height: clamp(44px, 6vw, 52px);
+            --radius-main: clamp(10px, 2vw, 16px);
+            --radius-btn: clamp(8px, 1.5vw, 12px);
         }
 
         body {
@@ -74,9 +77,22 @@ const GlobalStyles = () => (
             margin: 0;
             padding: 0;
             -webkit-font-smoothing: antialiased;
-            font-weight: 600;
+            font-weight: 400;
             overflow-x: hidden;
-            font-size: 14px;
+            font-size: clamp(13px, 1.8vw + 0.5rem, 15px);
+            line-height: 1.5;
+        }
+
+        @media (max-width: 767px) {
+            input[type="text"], input[type="number"], input[type="date"],
+            input[type="email"], input[type="password"], select, textarea {
+                font-size: 16px !important;
+            }
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 700;
+            color: var(--text-main);
         }
 
         .glass-bg {
@@ -92,51 +108,77 @@ const GlobalStyles = () => (
 
         .premium-card {
             background: #ffffff;
-            border-radius: 1.5rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            border-radius: var(--radius-main);
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
             border: 1px solid rgba(0,0,0,0.05);
         }
 
         .black-button {
             background: #000000;
             color: #ffffff;
-            padding: 10px 24px;
-            border-radius: 9999px;
-            font-weight: 900;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 0.15em;
+            height: var(--control-height);
+            padding: 0 clamp(16px, 3vw, 28px);
+            border-radius: var(--radius-btn);
+            font-weight: 700;
+            font-size: clamp(11px, 1.5vw, 14px);
+            letter-spacing: 0.06em;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            items-center: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             gap: 8px;
+            border: 1px solid #000000;
+            cursor: pointer;
+            white-space: nowrap;
+            min-height: 44px;
         }
 
         .black-button:hover {
-            transform: scale(1.05);
-            background: #18181b;
+            background: #1a1a1a;
+            border-color: #1a1a1a;
+            transform: scale(1.02);
+        }
+
+        .black-button:active {
+            transform: scale(0.98);
         }
 
         .form-input {
             width: 100%;
             background: #ffffff;
-            border: 1px solid rgba(0,0,0,0.08);
-            border-radius: 0.75rem;
-            padding: 10px 16px;
-            color: #000000;
-            font-weight: 700;
-            font-size: 0.9rem;
+            border: 1px solid rgba(0,0,0,0.10);
+            border-radius: var(--radius-main);
+            height: var(--control-height);
+            padding: 0 clamp(12px, 2.5vw, 20px);
+            color: var(--text-main);
+            font-weight: 500;
+            font-size: clamp(13px, 1.8vw, 15px);
             outline: none;
             transition: all 0.2s;
+            box-sizing: border-box;
+            min-height: 44px;
         }
 
         .form-input:focus {
             border-color: #000000;
-            box-shadow: 0 0 0 4px rgba(0,0,0,0.03);
+            box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
+        }
+
+        .form-input::placeholder {
+            color: #cbd5e1;
+            font-weight: 400;
+        }
+
+        textarea.form-input {
+            height: auto;
+            min-height: clamp(80px, 12vw, 120px);
+            padding: clamp(10px, 2vw, 16px) clamp(12px, 2.5vw, 20px);
+            resize: vertical;
         }
 
         .section-header {
-            font-size: 2.5rem;
+            font-size: clamp(1.6rem, 4vw + 0.5rem, 3rem);
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: -0.05em;
@@ -146,14 +188,16 @@ const GlobalStyles = () => (
         }
 
         .pill-tab {
-            padding: 10px 32px;
+            padding: clamp(8px, 1.5vw, 12px) clamp(14px, 2.5vw, 32px);
             border-radius: 9999px;
             font-weight: 900;
             text-transform: uppercase;
-            font-size: 0.8rem;
+            font-size: clamp(9px, 1.2vw, 12px);
             letter-spacing: 0.1em;
             transition: all 0.3s;
             font-style: italic;
+            white-space: nowrap;
+            cursor: pointer;
         }
 
         .pill-tab-active {
@@ -168,26 +212,32 @@ const GlobalStyles = () => (
 
         .item-card {
             background: #ffffff;
-            padding: 24px;
-            border-radius: 1.25rem;
-            border: 1px solid rgba(0,0,0,0.03);
+            padding: clamp(14px, 2.5vw, 24px);
+            border-radius: clamp(14px, 2vw, 20px);
+            border: 1px solid rgba(0,0,0,0.04);
             transition: all 0.3s;
         }
 
         .item-card:hover {
-            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.06);
             transform: translateY(-2px);
         }
 
         .badge-standard {
             background: #f1f5f9;
-            padding: 4px 12px;
+            padding: clamp(3px, 0.5vw, 5px) clamp(8px, 1.5vw, 14px);
             border-radius: 8px;
-            font-size: 0.65rem;
+            font-size: clamp(8px, 1vw, 11px);
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: 0.1em;
             color: #64748b;
+        }
+
+        @media (max-width: 640px) {
+            .section-header { font-size: clamp(1.4rem, 8vw, 2rem); }
+            .pill-tab { padding: 8px 14px; font-size: 9px; }
+            .item-card { padding: 14px 16px; border-radius: 16px; }
         }
 
         /* ===== SCROLLBAR ===== */

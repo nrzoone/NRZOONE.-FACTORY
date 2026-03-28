@@ -185,9 +185,9 @@ const ReportsPanel = ({ masterData, user, setActivePanel, t }) => {
                           <div className="h-4 border-b border-black/10 mt-2"></div>
                         </div>
                         <img
-                          src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(`https://nrzo0ne.vercel.app?track=${job.id}`)}`}
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`${window.location.origin}?track=${job.id}`)}`}
                           alt="QR"
-                          className="w-16 h-16 rounded-lg opacity-80"
+                          className="w-20 h-20 rounded-lg opacity-80"
                         />
                       </div>
                     </div>

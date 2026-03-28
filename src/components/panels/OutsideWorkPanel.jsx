@@ -1,4 +1,12 @@
 import React, { useState } from 'react';
+import { Card, Row, Col, Typography, Divider, QRCode, Tag, ConfigProvider } from 'antd';
+const { Title, Text } = Typography;
+
+const QR_Slip_Theme = {
+  token: { fontFamily: 'Inter, sans-serif', borderRadius: 8, fontSize: 12, colorTextBase: '#000000' },
+  components: { Card: { paddingLG: 16 }, Typography: { fontSizeHeading4: 18, fontSizeHeading5: 14 } }
+};
+
 import { ExternalLink, Plus, Trash2, CheckCircle, Clock, DollarSign, X, Search, Printer, MessageSquare, ArrowLeft, CheckCircle2, Archive, Scissors } from 'lucide-react';
 import { syncToSheet } from '../../utils/syncUtils';
 import logoWhite from '../../assets/logo_white.png';
@@ -172,94 +180,89 @@ const OutsideWorkPanel = ({ masterData, setMasterData, showNotify, user, setActi
     if (printSlip) {
         const SlipCard = ({ copyTitle }) => {
             return (
-                <div className="w-full h-full flex-1 border-[6px] border-black bg-white relative overflow-hidden flex text-black" style={{ minHeight: '140mm' }}>
-                    {/* Side Branding Bar */}
-                    <div className="w-20 bg-black flex flex-col items-center justify-between py-8 shrink-0">
-                        <img src={logoWhite} alt="NRZO0NE" className="w-12 h-12 object-contain" />
+            <ConfigProvider theme={QR_Slip_Theme}>
+                <div style={{ minHeight: '140mm' }} className="w-full flex-1 border-[6px] border-black bg-white relative overflow-hidden flex text-black">
+                    <div className="w-20 bg-white border-r-[3px] border-black flex flex-col items-center justify-between py-8 shrink-0">
+                        <img src={logoBlack} alt="NRZO0NE" className="w-12 h-12 object-contain" />
                         <div className="rotate-[-90deg] whitespace-nowrap">
-                            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-white/40">NRZO0NE OUTSOURCE UNIT</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-black">NRZO0NE OUTSOURCE UNIT</p>
                         </div>
-                        <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center">
-                            <div className="w-4 h-4 rounded-full bg-rose-500 animate-pulse"></div>
+                        <div className="w-10 h-10 border-2 border-black rounded-full flex items-center justify-center">
+                            <div className="w-4 h-4 rounded-full bg-black animate-pulse"></div>
                         </div>
                     </div>
 
-                    <div className="flex-1 p-8 flex flex-col relative">
-                        {/* Watermark Logo */}
+                    <div className="flex-1 p-6 relative flex flex-col items-center justify-center bg-white">
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] -rotate-12 pointer-events-none">
-                            <img src={logoBlack} alt="" className="w-96 h-96 object-contain" />
+                            <img src={logoBlack} alt="" className="w-80 h-80 object-contain" />
                         </div>
+                        
+                        <Card 
+                            style={{ width: '100%', height: '100%', border: '2px solid #000', borderRadius: '12px', display: 'flex', flexDirection: 'column', zIndex: 10, position: 'relative' }}
+                            bodyStyle={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column' }}
+                            hoverable={false}
+                        >
+                            <Row justify="space-between" align="middle">
+                                <Col>
+                                    <Title level={4} style={{ margin: 0, letterSpacing: '1px', fontStyle: 'italic', fontWeight: '900' }}>NRZO0NE</Title>
+                                    <Text type="secondary" style={{ fontSize: '10px', letterSpacing: '2px', textTransform: 'uppercase' }}>OUTSOURCE OPERATIONS UNIT</Text>
+                                </Col>
+                                <Col style={{ textAlign: 'right' }}>
+                                    <Tag color="black" style={{ margin: 0, fontWeight: 'bold' }}>{copyTitle}</Tag>
+                                    <br />
+                                    <Text strong style={{ fontSize: '12px', display: 'inline-block', marginTop: '4px' }}>{printSlip.date}</Text>
+                                </Col>
+                            </Row>
 
-                        <div className="relative z-10 w-full h-full flex flex-col gap-4">
-                            <div className="flex items-center justify-between border-b-4 border-black pb-4">
-                                <div>
-                                    <h1 className="text-5xl font-black italic tracking-tighter leading-none mb-1">NRZO0NE</h1>
-                                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">EXTERNAL OPERATIONS UNIT</p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-sm font-black uppercase tracking-[0.4em] text-slate-400 mb-1">{copyTitle}</p>
-                                    <p className="text-xl font-black italic text-black tracking-tighter leading-none">{printSlip.date}</p>
-                                </div>
-                            </div>
+                            <Divider style={{ margin: '14px 0', borderBlockStart: '2px solid #000' }} />
 
-                            <div className="flex-1 flex flex-col justify-between">
-                                <div className="grid grid-cols-2 gap-4 mt-4">
-                                    <div className="p-5 rounded-2xl bg-slate-50 border-2 border-slate-100 flex flex-col justify-center">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase mb-1">কারিগর (Contractor)</p>
-                                        <p className="text-2xl font-black italic text-black uppercase leading-tight">{printSlip.worker}</p>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <div style={{ background: '#f8f9fa', padding: '10px', borderRadius: '8px', textAlign: 'center', border: '1px solid #f0f0f0' }}>
+                                        <Text type="secondary" style={{ fontSize: '9px', fontWeight: 'bold', letterSpacing: '1px' }}>CONTRACTOR / কারিগর</Text>
+                                        <Title level={4} style={{ margin: '4px 0 0 0', fontStyle: 'italic', textTransform: 'uppercase' }}>{printSlip.worker}</Title>
                                     </div>
-                                    <div className="p-5 rounded-2xl bg-black text-white shadow-xl flex flex-col justify-center">
-                                        <p className="text-[9px] font-black text-white/40 uppercase mb-1">কাজের ধরন (Task)</p>
-                                        <p className="text-2xl font-black italic text-white uppercase leading-tight">{printSlip.task}</p>
+                                </Col>
+                                <Col span={12}>
+                                    <div style={{ background: '#fff', padding: '10px', borderRadius: '8px', textAlign: 'center', border: '2px solid #000' }}>
+                                        <Text style={{ fontSize: '9px', color: '#000', letterSpacing: '1px', fontWeight: 'bold' }}>TASK / কাজের ধরন</Text>
+                                        <Title level={4} style={{ margin: '4px 0 0 0', color: '#000', fontStyle: 'italic', textTransform: 'uppercase', fontWeight: '900' }}>{printSlip.task}</Title>
                                     </div>
-                                </div>
+                                </Col>
+                            </Row>
 
-                                <div className="grid grid-cols-2 gap-6 py-4 flex-1 items-center">
-                                    <div className="space-y-4 h-full">
-                                        <div className="h-full p-8 rounded-[3rem] border-4 border-rose-100 bg-rose-50/30 flex flex-col items-center justify-center relative group">
-                                            <p className="text-[11px] font-black uppercase mb-2 text-rose-400">বোরকা (Borka)</p>
-                                            <p className="text-8xl font-black italic text-rose-600 leading-none">{printSlip.borkaQty}</p>
-                                            <div className="absolute top-4 right-8 opacity-10">
-                                                <Scissors size={40} className="text-rose-600" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-4 h-full">
-                                        <div className="h-full p-8 rounded-[3rem] border-4 border-indigo-100 bg-indigo-50/30 flex flex-col items-center justify-center relative group">
-                                            <p className="text-[11px] font-black uppercase mb-2 text-indigo-400">হিজাব (Hijab)</p>
-                                            <p className="text-8xl font-black italic text-indigo-600 leading-none">{printSlip.hijabQty}</p>
-                                            <div className="absolute top-4 right-8 opacity-10">
-                                                <Archive size={40} className="text-indigo-600" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                            <Row gutter={16} style={{ marginTop: '16px', flex: 1 }}>
+                                <Col span={12}>
+                                    <Card style={{ textAlign: 'center', border: '2px dashed #000', background: '#fff', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }} bodyStyle={{ padding: '24px' }}>
+                                        <Text style={{ fontSize: '12px', color: '#000', fontWeight: 'bold', letterSpacing: '2px' }}>BORKA QTY</Text>
+                                        <Title level={1} style={{ margin: '8px 0 0 0', color: '#f5222d', fontStyle: 'italic', fontSize: '56px', fontWeight: '900' }}>{printSlip.borkaQty || 0}</Title>
+                                    </Card>
+                                </Col>
+                                <Col span={12}>
+                                    <Card style={{ textAlign: 'center', border: '2px dashed #000', background: '#fff', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }} bodyStyle={{ padding: '24px' }}>
+                                        <Text style={{ fontSize: '12px', color: '#000', fontWeight: 'bold', letterSpacing: '2px' }}>HIJAB QTY</Text>
+                                        <Title level={1} style={{ margin: '8px 0 0 0', color: '#1d39c4', fontStyle: 'italic', fontSize: '56px', fontWeight: '900' }}>{printSlip.hijabQty || 0}</Title>
+                                    </Card>
+                                </Col>
+                            </Row>
 
-                                <div className="flex items-center justify-between pt-6 border-t border-slate-100">
-                                    <div className="flex items-center gap-5">
-                                        <div className="p-3 bg-white rounded-2xl border-2 border-slate-50 shadow-xl group hover:scale-110 transition-transform">
-                                            <img
-                                                src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`https://nrzo0ne.vercel.app?track=${printSlip.id}`)}`}
-                                                alt="Tracking QR"
-                                                className="w-20 h-20"
-                                            />
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">NRZO0NE Smart Track™</p>
-                                            <p className="text-[8px] font-bold text-slate-300 mt-1 uppercase italic">{printSlip.id}</p>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-[8px] font-black uppercase text-slate-200 tracking-widest italic mb-2">OFFICIAL AUTHORIZED SLIP</p>
-                                        <div className="flex gap-1 h-1.5 justify-end">
-                                            {Array.from({ length: 20 }).map((_, i) => <div key={i} className="w-1.5 h-full bg-slate-50"></div>)}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                            <Divider dashed style={{ margin: '16px 0 12px 0' }} />
+                            <Row align="middle" justify="space-between">
+                                <Col>
+                                    {typeof window !== 'undefined' && (
+                                        <QRCode value={`${window.location.origin}?track=${printSlip.id}`} size={110} bordered={false} style={{ margin: '-4px' }} color="#000" />
+                                    )}
+                                </Col>
+                                <Col style={{ textAlign: 'right' }}>
+                                    <Text style={{ fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px' }}>NRZO0NE SMART TRACK™</Text>
+                                    <br />
+                                    <Text type="secondary" style={{ fontSize: '9px' }}>Generated by NRZO0NE OUTSOURCE UNIT • ID: {printSlip.id}</Text>
+                                </Col>
+                            </Row>
+                        </Card>
                     </div>
                 </div>
+            </ConfigProvider>
             );
         };
 
@@ -415,7 +418,17 @@ const OutsideWorkPanel = ({ masterData, setMasterData, showNotify, user, setActi
                                         <button onClick={() => setPrintSlip(item)} className="w-12 h-12 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-black hover:text-white transition-all shadow-sm">
                                             <Printer size={18} />
                                         </button>
-                                        <button onClick={() => handleReceive(item)} className="black-button">REC</button>
+                                        <button onClick={() => handleReceive(item)} className="black-button">জমা নিন (REC)</button>
+                                        {isAdmin && (
+                                            <>
+                                                <button onClick={() => setNoteModal({ ...item, note: item.note || '' })} className="w-12 h-12 flex items-center justify-center rounded-full bg-slate-50 text-amber-500 hover:bg-amber-500 hover:text-white transition-all shadow-sm">
+                                                    <Settings size={18} />
+                                                </button>
+                                                <button onClick={() => handleDelete(item.id)} className="w-12 h-12 flex items-center justify-center rounded-full bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm">
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </>
+                                        )}
                                     </>
                                 ) : (
                                     <>
