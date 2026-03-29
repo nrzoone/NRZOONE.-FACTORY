@@ -31,11 +31,11 @@ const InventoryPanel = ({
 
   const summary = useMemo(() => {
     const items = [];
-    masterData.designs.forEach((d) => {
-      masterData.colors.forEach((c) => {
-        masterData.sizes.forEach((s) => {
+    (masterData.designs || []).forEach((d) => {
+      (masterData.colors || []).forEach((c) => {
+        (masterData.sizes || []).forEach((s) => {
           const res = getFinishedStock(masterData, d.name, c, s);
-          if (res.borka > 0 || res.hijab > 0) {
+          if (res && (res.borka > 0 || res.hijab > 0)) {
             items.push({
               design: d.name,
               color: c,
@@ -52,9 +52,9 @@ const InventoryPanel = ({
 
   const sewingSummary = useMemo(() => {
     const items = [];
-    masterData.designs.forEach((d) => {
-      masterData.colors.forEach((c) => {
-        masterData.sizes.forEach((s) => {
+    (masterData.designs || []).forEach((d) => {
+      (masterData.colors || []).forEach((c) => {
+        (masterData.sizes || []).forEach((s) => {
           const res = getSewingStock(masterData, d.name, c, s);
           if (res && (res.borka > 0 || res.hijab > 0)) {
             items.push({ design: d.name, color: c, size: s, borka: res.borka, hijab: res.hijab });
@@ -67,10 +67,10 @@ const InventoryPanel = ({
 
   const stoneSummary = useMemo(() => {
     const items = [];
-    masterData.designs.forEach((d) => {
+    (masterData.designs || []).forEach((d) => {
       if (Number(d.stoneRate || 0) === 0) return;
-      masterData.colors.forEach((c) => {
-        masterData.sizes.forEach((s) => {
+      (masterData.colors || []).forEach((c) => {
+        (masterData.sizes || []).forEach((s) => {
           const res = getFinishingStock(masterData, d.name, c, s);
           if (res && (res.borka > 0 || res.hijab > 0)) {
             items.push({ design: d.name, color: c, size: s, borka: res.borka, hijab: res.hijab });
