@@ -327,7 +327,7 @@ const TrackingView = ({ trackId, masterData, onClose }) => {
               <img
                 src={logoWhite}
                 alt="NRZO0NE"
-                className="w-24 h-auto object-contain"
+                className="w-40 h-auto object-contain"
               />
             </div>
             <h1 className="text-2xl font-black italic tracking-tighter uppercase ml-2">
@@ -694,11 +694,11 @@ const Sidebar = ({ activePanel, setActivePanel, user, setUser, isOpen, t }) => {
       className={`no-print fixed md:left-4 md:top-4 md:h-[calc(100vh-32px)] left-0 top-0 h-full bg-white/95 backdrop-blur-3xl md:border border-r border-slate-100/50 z-[100] flex flex-col pt-8 pb-10 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] sidebar overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.04)] ${isOpen ? "translate-x-0 w-[280px] md:w-[300px] md:rounded-[32px] 2xl:w-[320px]" : "-translate-x-full w-0"}`}
     >
       <div className="px-5 md:px-8 mb-10 flex flex-col items-center md:items-start">
-        <div className="bg-black rounded-2xl p-4 shadow-xl mb-4 group shrink-0 w-16 h-16 flex items-center justify-center">
+        <div className="bg-black rounded-2xl p-6 shadow-xl mb-6 group shrink-0 w-24 h-24 flex items-center justify-center">
             <img
               src={logoWhite}
               alt="NRZO0NE"
-              className="w-10 h-10 object-contain group-hover:rotate-12 transition-transform duration-500"
+              className="w-16 h-16 object-contain group-hover:rotate-12 transition-transform duration-500"
             />
         </div>
         <div className="hidden md:block">
@@ -1008,13 +1008,13 @@ const AppContent = () => {
             </div>
 
             <div className="flex-1 flex flex-col items-center justify-center py-16 relative z-10">
-              <div className="w-56 md:w-72 animate-premium-pulse relative">
+              <div className="w-64 md:w-[400px] animate-premium-pulse relative">
                 <img
                   src={logoWhite}
                   alt="NRZO0NE"
-                  className="w-full h-auto object-contain drop-shadow-[0_20px_50px_rgba(255,255,255,0.1)]"
+                  className="w-full h-auto object-contain drop-shadow-[0_20px_60px_rgba(255,255,255,0.15)]"
                 />
-                <div className="absolute inset-0 bg-white/5 blur-3xl rounded-full opacity-50"></div>
+                <div className="absolute inset-0 bg-white/5 blur-[100px] rounded-full opacity-50"></div>
               </div>
               <div className="mt-14 text-center space-y-4">
                 <h1 className="text-2xl md:text-7xl font-black uppercase italic tracking-tighter leading-none">
