@@ -95,12 +95,49 @@ const ExpensePanel = ({
     };
     setMasterData((prev) => ({
       ...prev,
-      expenses: prev.expenses.map((exp) =>
+      expenses: (prev.expenses || []).map((exp) =>
         exp.id === updated.id ? updated : exp,
       ),
     }));
     setEditExpense(null);
     showNotify("খরচ আপডেট করা হয়েছে!");
+  };
+
+  const handleAddExpense = (e) => {
+    e.preventDefault();
+    const f = e.target;
+    const newExp = {
+      id: "EXP-" + Date.now(),
+      date: f.date.value,
+      category: f.category.value,
+      description: f.description.value,
+      amount: Number(f.amount.value),
+    };
+    setMasterData((prev) => ({
+      ...prev,
+      expenses: [newExp, ...(prev.expenses || [])],
+    }));
+    f.reset();
+    setActiveTab("daily");
+    showNotify("নতুন খরচ সফলভাবে যোগ করা হয়েছে!");
+  };
+
+  const handleAddCash = (e) => {
+    e.preventDefault();
+    const f = e.target;
+    const newCash = {
+      id: "CASH-" + Date.now(),
+      date: f.date.value,
+      description: f.description.value,
+      amount: Number(f.amount.value),
+    };
+    setMasterData((prev) => ({
+      ...prev,
+      cashEntries: [newCash, ...(prev.cashEntries || [])],
+    }));
+    f.reset();
+    setActiveTab("daily");
+    showNotify("ক্যাশ-ইন সফলভাবে যোগ করা হয়েছে!");
   };
 
   if (showPrint) {
@@ -260,7 +297,65 @@ const ExpensePanel = ({
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
+      {activeTab === "new" && (
+        <div className="flex justify-center animate-fade-up">
+           <div className="ui-card flex flex-col gap-8">
+              <div className="text-center">
+                  <h3 className="text-3xl font-black italic uppercase italic">টাকা খরচ (Expense)</h3>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2 italic">Record money going out of the business</p>
+              </div>
+              <form onSubmit={handleAddExpense} className="space-y-6">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4 italic">Expense Category</label>
+                        <select name="category" className="form-input italic" required>
+                             {["Tea/Snacks", "Transport", "Material", "Utilities", "Salary", "Bonus", "Others"].map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4 italic">Date (তারিখ)</label>
+                        <input name="date" type="date" defaultValue={new Date().toISOString().split('T')[0]} className="form-input italic" required />
+                    </div>
+                 </div>
+                 <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4 italic">Description (কিসের খরচ)</label>
+                    <input name="description" placeholder="EXPENSE DETAILS..." className="form-input italic uppercase" required />
+                 </div>
+                 <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4 italic">Amount (টাকার পরিমাণ)</label>
+                    <input name="amount" type="number" placeholder="৳ 0.00" className="form-input text-2xl font-black text-rose-600 bg-rose-50/10 border-rose-100 italic" required />
+                 </div>
+                 <button type="submit" className="issue-work-btn max-w-none mt-4 rotate-1 bg-black text-white py-6 rounded-3xl shadow-2xl hover:scale-105 active:scale-95 transition-all text-xl font-black italic">CONFIRM EXPENSE</button>
+              </form>
+           </div>
+        </div>
+      )}
 
+      {activeTab === "cashIn" && (
+        <div className="flex justify-center animate-fade-up">
+           <div className="ui-card flex flex-col gap-8">
+              <div className="text-center">
+                  <h3 className="text-3xl font-black italic uppercase italic">টাকা আসা (Cash In)</h3>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2 italic">Record money coming into the business</p>
+              </div>
+              <form onSubmit={handleAddCash} className="space-y-6">
+                 <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4 italic">Date (তারিখ)</label>
+                    <input name="date" type="date" defaultValue={new Date().toISOString().split('T')[0]} className="form-input italic" required />
+                 </div>
+                 <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4 italic">Source / Details (টাকার উৎস)</label>
+                    <input name="description" placeholder="CASH SOURCE DETAILS..." className="form-input italic uppercase" required />
+                 </div>
+                 <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4 italic">Amount (টাকার পরিমাণ)</label>
+                    <input name="amount" type="number" placeholder="৳ 0.00" className="form-input text-2xl font-black text-emerald-600 bg-emerald-50/10 border-emerald-100 italic" required />
+                 </div>
+                 <button type="submit" className="issue-work-btn max-w-none mt-4 -rotate-1 bg-emerald-600 text-white py-6 rounded-3xl shadow-2xl hover:bg-black hover:scale-105 active:scale-95 transition-all text-xl font-black italic">RECEIVE CASH</button>
+              </form>
+           </div>
+        </div>
+      )}
       {activeTab === "daily" && (
         <div className="space-y-8">
           <div className="flex justify-between items-center px-10">
