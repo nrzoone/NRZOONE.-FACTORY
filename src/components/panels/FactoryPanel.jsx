@@ -798,19 +798,27 @@ const FactoryPanel = ({
                       <Printer size={18} />
                     </button>
                     {isAdmin && (
-                      <button
-                        onClick={() => {
-                          if (confirm('মুছে ফেলবেন?')) {
-                            setMasterData(prev => ({
-                              ...prev,
-                              productions: (prev.productions || []).filter(x => x.id !== p.id)
-                            }));
-                          }
-                        }}
-                        className="w-12 h-12 flex items-center justify-center rounded-full bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setEditModal(p)}
+                          className="w-12 h-12 flex items-center justify-center rounded-full bg-slate-50 text-amber-500 hover:bg-amber-500 hover:text-white transition-all shadow-sm"
+                        >
+                          <Settings size={18} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm('মুছে ফেলবেন?')) {
+                              setMasterData(prev => ({
+                                ...prev,
+                                productions: (prev.productions || []).filter(x => x.id !== p.id)
+                              }));
+                            }
+                          }}
+                          className="w-12 h-12 flex items-center justify-center rounded-full bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>

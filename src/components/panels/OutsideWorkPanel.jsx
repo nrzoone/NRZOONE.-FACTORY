@@ -406,39 +406,41 @@ const OutsideWorkPanel = ({ masterData, setMasterData, showNotify, user, setActi
                                     </div>
                                 )}
                             </div>
-                            <div className="flex gap-3">
+                            <div className="flex gap-3 items-center">
                                 {item.status === 'Pending' ? (
                                     <>
-                                        <button onClick={() => setNoteModal({ ...item, note: item.note || '' })} className="w-12 h-12 flex items-center justify-center rounded-full bg-amber-50 text-amber-500 hover:bg-amber-500 hover:text-white transition-all shadow-sm">
-                                            <MessageSquare size={18} />
-                                        </button>
                                         <button onClick={() => setPrintSlip(item)} className="w-12 h-12 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-black hover:text-white transition-all shadow-sm">
                                             <Printer size={18} />
                                         </button>
-                                        <button onClick={() => handleReceive(item)} className="black-button">জমা নিন (REC)</button>
+                                        <button onClick={() => handleReceive(item)} className="black-button px-6">জমা নিন (REC)</button>
                                         {isAdmin && (
-                                            <>
+                                            <div className="flex gap-2">
                                                 <button onClick={() => setNoteModal({ ...item, note: item.note || '' })} className="w-12 h-12 flex items-center justify-center rounded-full bg-slate-50 text-amber-500 hover:bg-amber-500 hover:text-white transition-all shadow-sm">
                                                     <Settings size={18} />
                                                 </button>
                                                 <button onClick={() => handleDelete(item.id)} className="w-12 h-12 flex items-center justify-center rounded-full bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm">
                                                     <Trash2 size={18} />
                                                 </button>
-                                            </>
+                                            </div>
                                         )}
                                     </>
                                 ) : (
                                     <>
-                                        <button onClick={() => setNoteModal({ ...item, note: item.note || '' })} className="w-12 h-12 flex items-center justify-center rounded-full bg-amber-50 text-amber-500 hover:bg-amber-500 hover:text-white transition-all shadow-sm">
-                                            <MessageSquare size={18} />
+                                        <button onClick={() => setPrintSlip(item)} className="w-12 h-12 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-black hover:text-white transition-all shadow-sm">
+                                            <Printer size={18} />
                                         </button>
                                         <button onClick={() => setPayModal(item)} className="w-12 h-12 flex items-center justify-center rounded-full bg-emerald-50 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-sm">
                                             <DollarSign size={18} />
                                         </button>
                                         {isAdmin && (
-                                            <button onClick={() => handleDelete(item.id)} className="w-12 h-12 flex items-center justify-center rounded-full bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm">
-                                                <Trash2 size={18} />
-                                            </button>
+                                            <div className="flex gap-2">
+                                                <button onClick={() => setNoteModal({ ...item, note: item.note || '' })} className="w-12 h-12 flex items-center justify-center rounded-full bg-slate-50 text-amber-500 hover:bg-amber-500 hover:text-white transition-all shadow-sm">
+                                                    <Settings size={18} />
+                                                </button>
+                                                <button onClick={() => handleDelete(item.id)} className="w-12 h-12 flex items-center justify-center rounded-full bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-sm">
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </div>
                                         )}
                                     </>
                                 )}

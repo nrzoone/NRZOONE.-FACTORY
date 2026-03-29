@@ -634,7 +634,12 @@ const PataFactoryPanel = ({ masterData, setMasterData, showNotify, user, setActi
                                 </div>
                                 <div className="flex gap-3">
                                     {item.status === 'Pending' ? (
-                                        <button onClick={() => setReceiveModal(item)} className="black-button">জমা নিন (REC)</button>
+                                        <>
+                                            <button onClick={() => setPrintSlip(item)} className="w-12 h-12 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-black hover:text-white transition-all shadow-sm">
+                                                <Printer size={18} />
+                                            </button>
+                                            <button onClick={() => setReceiveModal(item)} className="black-button">জমা নিন (REC)</button>
+                                        </>
                                     ) : (
                                         <button onClick={() => setPrintSlip(item)} className="w-12 h-12 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-black hover:text-white transition-all shadow-sm">
                                             <Printer size={18} />
