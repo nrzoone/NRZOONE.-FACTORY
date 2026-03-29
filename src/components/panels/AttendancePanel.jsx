@@ -493,7 +493,6 @@ const AttendancePanel = ({
           </div>
         </div>
       </div>
-Line 498: 
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
         <div className="bg-white p-6 md:p-8 rounded-[3rem] border-4 border-slate-50 shadow-2xl relative overflow-hidden group">

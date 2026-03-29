@@ -4,6 +4,7 @@ import {
   Plus,
   Trash2,
   X,
+  Box,
   Scissors,
   Search,
   CheckCircle,

@@ -7,7 +7,7 @@ const QR_Slip_Theme = {
   components: { Card: { paddingLG: 16 }, Typography: { fontSizeHeading4: 18, fontSizeHeading5: 14 } }
 };
 
-import { ExternalLink, Plus, Trash2, CheckCircle, Clock, DollarSign, X, Search, Printer, MessageSquare, ArrowLeft, CheckCircle2, Archive, Scissors } from 'lucide-react';
+import { ExternalLink, Plus, Trash2, CheckCircle, Clock, DollarSign, X, Search, Printer, MessageSquare, ArrowLeft, CheckCircle2, Archive, Scissors, Settings, Box, History } from 'lucide-react';
 import { syncToSheet } from '../../utils/syncUtils';
 import logoWhite from '../../assets/logo_white.png';
 import logoBlack from '../../assets/logo_black.png';
