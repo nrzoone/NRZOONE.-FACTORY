@@ -15,10 +15,11 @@ import {
   Hash,
   AlertCircle,
   ArrowLeft,
+  Camera,
 } from "lucide-react";
 import { syncToSheet } from "../../utils/syncUtils";
-import logoWhite from "../../assets/logo_white.png";
 import logoBlack from "../../assets/logo_black.png";
+import QRScanner from "../QRScanner";
 
 const AttendancePanel = ({
   masterData,
@@ -34,6 +35,18 @@ const AttendancePanel = ({
   const [showInvoice, setShowInvoice] = useState(false);
   const [showDailyPrint, setShowDailyPrint] = useState(false);
   const [viewMode, setViewMode] = useState("attendance"); // 'attendance' or 'duty'
+  const [showQR, setShowQR] = useState(false);
+  
+  const handleQRScan = (scannedName) => {
+    const workerMatch = workers.find(w => w.toUpperCase() === scannedName.toUpperCase());
+    if (workerMatch) {
+        markAttendance(workerMatch, 'present');
+        setShowQR(false);
+        showNotify(`QR: ${workerMatch} marked Present!`, 'success');
+    } else {
+        showNotify("Worker not found for this dept!", "error");
+    }
+  };
 
   const workers = useMemo(() => {
     return masterData.workerCategories[selectedDepartment] || [];
@@ -550,14 +563,21 @@ const AttendancePanel = ({
               <p className="text-sm font-black uppercase leading-tight italic">Wage Statement</p>
             </button>
             <button
-              onClick={() => setShowDailyPrint(true)}
-              className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:border-black transition-all text-left group"
+              onClick={() => setShowQR(true)}
+              className="bg-indigo-600 text-white p-6 rounded-2xl shadow-xl hover:scale-[1.02] transition-all text-left group"
             >
-              <UserCheck size={16} className="mb-3 text-slate-300 group-hover:text-black transition-colors" />
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">দৈনিক (Daily)</p>
-              <p className="text-sm font-black uppercase leading-tight italic">Attendance Sheet</p>
+              <Camera size={16} className="mb-3 text-white/40 group-hover:text-white transition-colors" />
+              <p className="text-[9px] font-black text-white/40 uppercase tracking-widest mb-1 italic">QR (Rapid Scan)</p>
+              <p className="text-sm font-black uppercase leading-tight italic">Scan Attendance</p>
             </button>
           </div>
+          
+          {showQR && (
+              <QRScanner 
+                  onScanSuccess={handleQRScan}
+                  onClose={() => setShowQR(false)}
+              />
+          )}
 
           <div className="grid grid-cols-1 gap-4">
             {workers.length === 0 ? (

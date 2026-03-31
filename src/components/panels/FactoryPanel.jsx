@@ -23,12 +23,15 @@ import {
   AlertCircle,
   User,
   Layers,
-  Settings,
-  Trash2,
   Search,
-  ChevronRight,
+  Camera,
   Box,
+  Trash2,
+  Settings,
+  ChevronRight,
+  Share2
 } from "lucide-react";
+import QRScanner from "../QRScanner";
 import {
   getStock,
   getSewingStock,
@@ -47,6 +50,7 @@ const FactoryPanel = ({
   user,
   setActivePanel,
   t,
+  logAction
 }) => {
   const type = initialType;
   const [view, setView] = useState("active"); // 'active', 'history', 'payments'
@@ -61,6 +65,7 @@ const FactoryPanel = ({
   const [editModal, setEditModal] = useState(null);
   const [showAllLots, setShowAllLots] = useState(false);
   const [lotSearch, setLotSearch] = useState("");
+  const [showQR, setShowQR] = useState(false);
 
   const [selection, setSelection] = useState({
     design: "",
@@ -378,6 +383,13 @@ const FactoryPanel = ({
       ],
     }));
 
+    // Audit Log Integration
+    logAction(
+      user,
+      `${type.toUpperCase()}_ISSUE`,
+      `${worker} assigned ${design} (${color}) Lot #${lotNo}. Items: ${validIssues.length}`
+    );
+
     newEntries.forEach((entry) =>
       syncToSheet({
         type: `${type.toUpperCase()}_ISSUE`,
@@ -398,6 +410,16 @@ const FactoryPanel = ({
     const rHijab = Number(e.target.rHijab.value || 0);
     if (rBorka > receiveModal.issueBorka || rHijab > receiveModal.issueHijab)
       return showNotify("ইস্যুর চেয়ে বেশি জমা সম্ভব নয়!", "error");
+
+    const totalWasted = (receiveModal.issueBorka - rBorka) + (receiveModal.issueHijab - rHijab);
+    const totalIssued = receiveModal.issueBorka + receiveModal.issueHijab;
+    const wastePercent = totalIssued > 0 ? (totalWasted / totalIssued) * 100 : 0;
+
+    if (wastePercent > 10) {
+      if (!window.confirm(`⚠️ সতর্কতা: এই লটে ${wastePercent.toFixed(1)}% কাটিং ওয়েস্টেজ দেখা যাচ্ছে। আপনি কি নিশ্চিত যে এই হিসাবটি সঠিক?`)) {
+        return;
+      }
+    }
 
     setMasterData((prev) => ({
       ...prev,
@@ -426,6 +448,14 @@ const FactoryPanel = ({
       detail: `${receiveModal.design}: Rec B:${rBorka} H:${rHijab}`,
       amount: 0,
     });
+    
+    // Audit Log Integration
+    logAction(
+      user,
+      `${receiveModal.type.toUpperCase()}_RECEIVE`,
+      `Received from ${receiveModal.worker}: Lot #${receiveModal.lotNo} - B:${rBorka} H:${rHijab}`
+    );
+
     setReceiveModal(null);
     showNotify("হিসাব জমা নেওয়া হয়েছে!");
   };
@@ -506,131 +536,110 @@ const FactoryPanel = ({
   };
 
   if (printSlip) {
-    const SlipHalf = ({ copyTitle }) => (
+    const SlipHalf = ({ data, copyTitle }) => (
       <ConfigProvider theme={QR_Slip_Theme}>
-        <div style={{ minHeight: "140mm" }} className="w-full flex-1 border-[2px] border-black bg-white relative overflow-hidden flex text-black">
-          <div className="w-20 bg-white border-r-[2px] border-black flex flex-col items-center justify-between py-8 shrink-0">
-            <img src={logoBlack} alt="NRZO0NE" className="w-12 h-12 object-contain" />
-            <div className="rotate-[-90deg] whitespace-nowrap">
-              <p className="text-[10px] font-black uppercase tracking-[0.5em] text-black">NRZO0NE FACTORY SYSTEM</p>
-            </div>
-            <div className="w-8 h-8 border border-black rounded-full flex items-center justify-center">
-              <div className="w-2 h-2 rounded-full bg-transparent border border-black"></div>
-            </div>
-          </div>
-          <div className="flex-1 p-6 relative flex flex-col items-center justify-center bg-white">
+        <div className="w-full bg-white flex flex-col relative overflow-hidden border-b-2 border-black/10 last:border-0 p-12" style={{ height: '148.5mm' }}>
+             <div className="flex justify-between items-start border-b-4 border-black pb-8 mb-8">
+                <div>
+                   <h1 className="text-5xl font-black tracking-tighter uppercase leading-none">NRZO0NE</h1>
+                   <p className="text-xs font-black uppercase tracking-[0.6em] text-slate-400 mt-2">FACTORY LOGISTICS • SECURE NODE</p>
+                </div>
+                <div className="text-right">
+                   <p className="text-2xl font-black uppercase tracking-widest italic decoration-double">LOT #{data.lotNo}</p>
+                   <p className="text-lg font-black text-slate-400 mt-1">{data.date}</p>
+                </div>
+             </div>
 
-            <Card
-              style={{ width: '100%', height: '100%', border: '2px solid #000', borderRadius: '12px', display: 'flex', flexDirection: 'column', zIndex: 10, position: 'relative' }}
-              bodyStyle={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column' }}
-              hoverable={false}
-            >
-              <Row justify="space-between" align="middle">
-                <Col>
-                  <Title level={4} style={{ margin: 0, letterSpacing: '1px', fontStyle: 'italic', fontWeight: '900' }}>NRZO0NE</Title>
-                  <Text type="secondary" style={{ fontSize: '10px', letterSpacing: '2px', textTransform: 'uppercase' }}>{type} PRODUCTION UNIT</Text>
-                </Col>
-                <Col style={{ textAlign: 'right' }}>
-                  <Tag color="black" style={{ margin: 0, fontWeight: 'bold' }}>{copyTitle}</Tag>
-                  <br />
-                  <Text strong style={{ fontSize: '12px', display: 'inline-block', marginTop: '4px' }}>{printSlip.date || '25/03/2026'}</Text>
-                </Col>
-              </Row>
-
-              <Divider style={{ margin: '14px 0', borderBlockStart: '2px solid #000' }} />
-
-              <Row gutter={12}>
-                <Col span={8}>
-                  <div style={{ background: '#fff', padding: '10px', borderRadius: '4px', textAlign: 'center', border: '1px solid #000' }}>
-                    <Text type="secondary" style={{ fontSize: '9px', fontWeight: 'bold', letterSpacing: '1px', color: '#000' }}>WORKER / কারিগর</Text>
-                    <Title level={5} style={{ margin: '4px 0 0 0', fontStyle: 'italic', textTransform: 'uppercase' }}>{printSlip.worker || 'JIHAN'}</Title>
+             <div className="flex-1 flex flex-col justify-center gap-12">
+                  <div className="grid grid-cols-2 gap-12">
+                      <div className="border-4 border-black p-6 bg-slate-50 rounded-3xl">
+                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">DESIGN SPECIFICATION</p>
+                          <p className="text-4xl font-black uppercase truncate">{data.design}</p>
+                      </div>
+                      <div className="border-4 border-black p-6 bg-slate-50 rounded-3xl">
+                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">ASSIGNED OPERATIVE</p>
+                          <p className="text-4xl font-black uppercase truncate">{data.worker}</p>
+                      </div>
                   </div>
-                </Col>
-                <Col span={8}>
-                  <div style={{ background: '#fff', padding: '10px', borderRadius: '4px', textAlign: 'center', border: '1px solid #000' }}>
-                    <Text type="secondary" style={{ fontSize: '9px', fontWeight: 'bold', letterSpacing: '1px', color: '#000' }}>DESIGN / ডিজাইন</Text>
-                    <Title level={5} style={{ margin: '4px 0 0 0', fontStyle: 'italic' }}>{printSlip.design || 'পাতা'}</Title>
-                  </div>
-                </Col>
-                <Col span={8}>
-                  <div style={{ background: '#fff', padding: '10px', borderRadius: '4px', textAlign: 'center', border: '1px solid #000' }}>
-                    <Text style={{ fontSize: '9px', color: '#000', letterSpacing: '1px', fontWeight: 'bold' }}>LOT NO / লট নং</Text>
-                    <Title level={5} style={{ margin: '4px 0 0 0', color: '#000', fontStyle: 'italic', fontWeight: '900' }}>#{printSlip.lotNo || 'ADMIN'}</Title>
-                  </div>
-                </Col>
-              </Row>
 
-              <Row gutter={12} style={{ marginTop: '16px', flex: 1 }}>
-                <Col span={6}>
-                  <Card size="small" style={{ textAlign: 'center', border: '1px solid #000', background: '#fff', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }} bodyStyle={{ padding: '10px' }}>
-                    <Text style={{ fontSize: '9px', color: '#000', fontWeight: 'bold' }}>ISSUE BORKA</Text>
-                    <Title level={4} style={{ margin: '4px 0 0 0', fontStyle: 'italic', color: '#000' }}>{printSlip.issueBorka || 0}</Title>
-                  </Card>
-                </Col>
-                <Col span={6}>
-                  <Card size="small" style={{ textAlign: 'center', border: '1px solid #000', background: '#fff', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }} bodyStyle={{ padding: '10px' }}>
-                    <Text style={{ fontSize: '9px', color: '#000', fontWeight: 'bold' }}>ISSUE HIJAB</Text>
-                    <Title level={4} style={{ margin: '4px 0 0 0', fontStyle: 'italic', color: '#000' }}>{printSlip.issueHijab || 0}</Title>
-                  </Card>
-                </Col>
-                <Col span={6}>
-                  <Card size="small" style={{ textAlign: 'center', background: '#fff', border: '1px solid #000', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }} bodyStyle={{ padding: '10px' }}>
-                    <Text style={{ fontSize: '9px', fontWeight: 'bold', color: '#000' }}>RECEIVED QTY</Text>
-                    <Title level={4} style={{ margin: '4px 0 0 0', color: '#000', fontStyle: 'italic' }}></Title>
-                  </Card>
-                </Col>
-                <Col span={6}>
-                  <Card size="small" style={{ textAlign: 'center', background: '#fff', border: '1px dashed #000', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }} bodyStyle={{ padding: '10px' }}>
-                    <Text style={{ fontSize: '9px', color: '#000', fontWeight: 'bold' }}>SIZE</Text>
-                    <Title level={4} style={{ margin: '4px 0 0 0', color: '#000', fontStyle: 'italic', fontWeight: '900' }}>{printSlip.size || 44}</Title>
-                  </Card>
-                </Col>
-              </Row>
+                  <div className="grid grid-cols-12 gap-8 items-center border-y-4 border-black py-10">
+                      <div className="col-span-8 grid grid-cols-3 gap-4">
+                          <div className="text-center group">
+                              <p className="text-[11px] font-black uppercase text-slate-400 mb-2">Size</p>
+                              <p className="text-6xl font-black italic leading-none">{data.size}</p>
+                          </div>
+                          <div className="text-center">
+                              <p className="text-[11px] font-black uppercase text-slate-400 mb-2">Borka</p>
+                              <p className="text-6xl font-black italic leading-none">{data.issueBorka}</p>
+                          </div>
+                          <div className="text-center">
+                              <p className="text-[11px] font-black uppercase text-slate-400 mb-2">Hijab</p>
+                              <p className="text-6xl font-black italic leading-none">{data.issueHijab}</p>
+                          </div>
+                      </div>
+                      <div className="col-span-4 flex items-center justify-end gap-6">
+                          <div className="text-right">
+                              <p className="text-[10px] font-black uppercase text-slate-400 mb-1 tracking-widest">NR-SCAN ID</p>
+                              <p className="text-xs font-black italic opacity-30">{data.id}</p>
+                          </div>
+                          <QRCode value={data.id} size={120} bordered={false} style={{ padding: 0 }} />
+                      </div>
+                  </div>
+             </div>
 
-              <Divider dashed style={{ margin: '16px 0 12px 0' }} />
-              <Row align="middle" justify="space-between">
-                <Col>
-                  {typeof window !== 'undefined' && (
-                    <QRCode value={`${window.location.origin}?track=${printSlip.id}`} size={110} bordered={false} style={{ margin: '-4px' }} color="#000" />
-                  )}
-                </Col>
-                <Col style={{ textAlign: 'right' }}>
-                  <Text style={{ fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px' }}>NRZO0NE SMART TRACK™</Text>
-                  <br />
-                  <Text type="secondary" style={{ fontSize: '9px' }}>Generated by NRZO0NE Factory System • ID: {printSlip.id}</Text>
-                </Col>
-              </Row>
-            </Card>
-          </div>
+             <div className="mt-8 pt-8 flex justify-between items-center border-t-2 border-dashed border-slate-200">
+                  <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-black rounded flex items-center justify-center p-2">
+                        <img src={logoWhite} className="w-full h-full object-contain" alt="NR" />
+                      </div>
+                      <div>
+                        <p className="text-[8px] font-black uppercase text-slate-400">System v2.10</p>
+                        <p className="text-[10px] font-black tracking-tighter italic">SMART TRACK™ PRODUCTION NODE</p>
+                      </div>
+                  </div>
+                  <div className="px-12 py-4 bg-black text-white rounded-[2rem] font-black uppercase tracking-[0.4em] italic text-xl shadow-2xl">
+                      {copyTitle}
+                  </div>
+             </div>
         </div>
       </ConfigProvider>
     );
 
     return (
-      <div className="min-h-screen bg-slate-50 text-black italic font-outfit py-10 print:py-0">
-        <style>{`@media print { .no-print { display: none !important; } body { background: white !important; } @page { size: A4 portrait; margin: 0; } }`}</style>
-        <div className="no-print flex justify-between items-center p-8 w-[210mm] mx-auto mb-10 bg-white rounded-2xl shadow-2xl border-4 border-slate-100 uppercase font-black">
-          <button
-            onClick={() => setPrintSlip(null)}
-            className="px-5 py-3 rounded-full hover:bg-black hover:text-white transition-all text-sm tracking-widest"
-          >
-            Back
-          </button>
-          <button
-            onClick={() => window.print()}
-            className="bg-black text-white px-5 py-3 rounded-full shadow-2xl flex items-center gap-3 hover:scale-105 active:scale-95 transition-all text-sm tracking-widest"
-          >
-            <Printer size={20} /> PRINT BUNDLE
+      <div className="min-h-screen bg-slate-100 text-black font-outfit py-10 print:p-0 print:bg-white">
+        <style>{`
+          @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; padding: 0 !important; }
+            @page { size: A4 portrait; margin: 0mm; }
+            .print-grid {
+              display: block !important;
+              padding: 0 !important;
+              width: 210mm !important;
+              height: 297mm !important;
+            }
+          }
+        `}</style>
+        <div className="no-print flex justify-between items-center p-6 w-[210mm] mx-auto mb-6 bg-white rounded-2xl shadow-xl">
+          <button onClick={() => setPrintSlip(null)} className="px-6 py-2 rounded-full font-bold border-2 border-black hover:bg-black hover:text-white transition-all">Back</button>
+          <div className="text-center">
+            <h2 className="text-sm font-black uppercase tracking-widest leading-none">Eco-Print Layout (3x2)</h2>
+            <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase">Saves 60% Paper usage</p>
+          </div>
+          <button onClick={() => window.print()} className="bg-black text-white px-8 py-2 rounded-full font-bold shadow-lg flex items-center gap-2 hover:scale-105 active:scale-95 transition-all">
+            <Printer size={18} /> PRINT A4
           </button>
         </div>
-        <div className="w-[210mm] h-[297mm] mx-auto bg-white shadow-3xl flex flex-col print:w-full print:shadow-none print:m-0 border border-slate-200 print:border-none">
-          <SlipHalf copyTitle="WORKER COPY" />
-          <div className="w-full border-t-[2px] border-dashed border-black relative flex justify-center py-0 shrink-0 select-none items-center h-16">
-            <span className="relative z-10 bg-white px-8 py-2 text-[10px] font-black uppercase tracking-[0.5em] text-slate-400 border-2 border-slate-100 rounded-full shadow-md italic">
-              ✂ এখান থেকে কাটুন
-            </span>
-          </div>
-          <SlipHalf copyTitle="FACTORY COPY" />
+        
+        <div className="print-grid w-[210mm] h-[297mm] mx-auto bg-white border border-gray-100 overflow-hidden relative">
+           {/* Half A4 - Top Slip */}
+           <SlipHalf data={printSlip} copyTitle="WORKER COPY" />
+           
+           {/* Visual Cut Line Indicator */}
+           <div className="absolute top-[148.5mm] left-0 w-full border-t-2 border-dashed border-gray-300 z-50"></div>
+           
+           {/* Half A4 - Bottom Slip */}
+           <SlipHalf data={printSlip} copyTitle="FACTORY COPY" />
         </div>
       </div>
     );
@@ -655,43 +664,46 @@ const FactoryPanel = ({
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-6 w-full md:w-auto">
-          <div className="bg-white px-6 py-3 rounded-2xl border border-slate-100 shadow-sm hidden md:block">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Active Pipeline</p>
-            <p className="text-2xl font-black italic text-black leading-none uppercase">
-              {activeProductions.length} <span className="text-[10px] text-slate-300 ml-1">Lots</span>
-            </p>
-          </div>
-        </div>
       </div>
-
-      <div className="flex bg-white p-2 rounded-2xl border border-slate-100 shadow-sm overflow-x-auto mb-10">
-        {["new", "active", "history", (isAdmin || isManager) && "payments"].filter(Boolean).map((v) => (
-          <button
-            key={v}
-            onClick={() => {
-              if (v === "new") setShowIssueModal(true);
-              else setView(v);
-            }}
-            className={`pill-tab flex-1 whitespace-nowrap min-w-[100px] ${view === v ? "pill-tab-active" : "pill-tab-inactive hover:text-black"}`}
-          >
-            {v === "new" ? "নতুন কাজ" : v === "active" ? "চলমান" : v === "history" ? "পুরাতন" : "লেজার ও পেমেন্ট"}
-          </button>
-        ))}
+      {/* Unified Floating Filter Bar */}
+      <div className="floating-header-group mb-12 p-3 dark:bg-zinc-900 border-none shadow-2xl">
+          <div className="flex flex-col lg:flex-row items-center gap-6 w-full">
+              <div className="flex items-center gap-2 bg-slate-100 dark:bg-black/50 p-2 rounded-2xl w-full lg:w-auto overflow-x-auto no-scrollbar">
+                  {["active", "history", (isAdmin || isManager) && "payments"].filter(Boolean).map((v) => (
+                    <button
+                      key={v}
+                      onClick={() => setView(v)}
+                      className={`px-10 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${view === v ? 'bg-black text-white dark:bg-white dark:text-black shadow-lg italic' : 'text-slate-400 hover:text-black dark:hover:text-white'}`}
+                    >
+                      {v === "active" ? "চলমান" : v === "history" ? "পুরাতন" : "লেজার ও পেমেন্ট"}
+                    </button>
+                  ))}
+              </div>
+              
+              <div className="flex-1 relative w-full group">
+                  <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none text-slate-300 group-focus-within:text-black dark:group-focus-within:text-white transition-colors">
+                      <Search size={16} />
+                  </div>
+                  <input
+                      placeholder="সার্চ লট নম্বর, কারিগর বা ডিজাইন..."
+                      className="w-full bg-slate-50 dark:bg-black/20 h-16 rounded-2xl pl-16 pr-8 text-xs font-black uppercase tracking-widest italic outline-none border border-transparent focus:border-black/10 dark:focus:border-white/10 transition-all text-black dark:text-white"
+                      value={lotSearch}
+                      onChange={(e) => setLotSearch(e.target.value)}
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                      <button 
+                        onClick={() => setShowQR(true)}
+                        className="w-10 h-10 bg-black text-white rounded-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg"
+                      >
+                         <Camera size={16} />
+                      </button>
+                  </div>
+              </div>
+          </div>
       </div>
 
       {view === "active" && (
         <div className="space-y-4">
-          <div className="relative group mb-8">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-black transition-colors" size={20} />
-            <input
-              type="text"
-              placeholder="সার্চ লট নম্বর, কারিগর বা ডিজাইন..."
-              className="form-input pl-16 py-5 text-base border-slate-200"
-              value={lotSearch}
-              onChange={(e) => setLotSearch(e.target.value)}
-            />
-          </div>
 
           {activeProductions.length === 0 ? (
             <div className="h-64 flex flex-col items-center justify-center bg-white rounded-3xl border-2 border-dashed border-slate-100 opacity-40">
@@ -1061,6 +1073,29 @@ const FactoryPanel = ({
                        onChange={(e) => setSelection(p => ({ ...p, note: e.target.value }))}
                      />
                   </div>
+
+                  {type === "stone" && (
+                    <div className="bg-indigo-50/50 p-6 rounded-[2rem] border border-indigo-100 space-y-4">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest italic">Pata Stock Control</label>
+                        <span className="px-4 py-1.5 bg-white border border-indigo-100 rounded-full text-[10px] font-black text-indigo-600 shadow-sm animate-pulse">
+                          LIVE STOCK: {getPataStockItem(masterData, selection.design, selection.color, selection.pataType) || 0} PCS
+                        </span>
+                      </div>
+                      <div className="relative">
+                        <select
+                          className="w-full bg-white border-2 border-indigo-100 px-6 py-4 rounded-2xl font-black text-sm uppercase outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer"
+                          value={selection.pataType}
+                          onChange={(e) => setSelection(p => ({ ...p, pataType: e.target.value }))}
+                        >
+                          {(masterData.pataTypes || ["Single", "Double", "Standard"]).map(pt => (
+                            <option key={pt} value={pt}>{pt} PATA MODULE</option>
+                          ))}
+                        </select>
+                        <ChevronRight size={20} className="absolute right-6 top-1/2 -translate-y-1/2 text-indigo-300 pointer-events-none" />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
               </div>
@@ -1089,8 +1124,8 @@ const FactoryPanel = ({
                                <div className="flex items-center justify-between">
                                   <div className="px-4 py-2 bg-black text-white rounded-lg text-sm font-black">{row.size || "--"}</div>
                                </div>
-                               <div className="flex gap-4 items-center">
-                                  <div className="flex-1 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 items-center">
+                                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
                                       <div className="flex justify-between items-center mb-1">
                                          <p className="text-[9px] font-black uppercase text-slate-400">Borka Qty</p>
                                          <span className="text-[8px] font-bold text-slate-400">Max: {maxBorka}</span>
@@ -1107,14 +1142,14 @@ const FactoryPanel = ({
                                         }}
                                       />
                                   </div>
-                                  <div className="flex-1 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
                                       <div className="flex justify-between items-center mb-1">
                                          <p className="text-[9px] font-black uppercase text-slate-400">Hijab Qty</p>
                                          <span className="text-[8px] font-bold text-slate-400">Max: {maxHijab}</span>
                                       </div>
                                       <input
                                         type="number"
-                                        className="w-full bg-transparent text-xl font-black text-slate-500 outline-none p-0"
+                                        className="w-full bg-transparent text-xl font-black text-slate-400 outline-none p-0"
                                         placeholder="0"
                                         value={row.hijab}
                                         onChange={(e) => {
@@ -1124,6 +1159,37 @@ const FactoryPanel = ({
                                         }}
                                       />
                                   </div>
+                                  {type === "stone" && (
+                                    <div className="bg-indigo-50 p-3 rounded-xl border border-indigo-100 relative group">
+                                        <div className="flex justify-between items-center mb-1">
+                                           <p className="text-[9px] font-black uppercase text-indigo-400">Pata (পাতা) Qty</p>
+                                           <div className="flex flex-col items-end">
+                                              {(() => {
+                                                  const stock = getPataStockItem(masterData, selection.design, selection.color, selection.pataType);
+                                                  return (
+                                                    <>
+                                                      <p className={`text-[7px] font-black uppercase tracking-widest ${stock < 10 ? 'text-rose-500 animate-pulse' : 'text-indigo-300'}`}>{stock < 10 ? 'ALERT: LOW' : 'Live Stock'}</p>
+                                                      <p className={`text-[10px] font-black ${stock < 10 ? 'text-rose-500' : 'text-black'}`}>
+                                                          {stock} <span className="text-[8px] text-slate-400">Pcs</span>
+                                                      </p>
+                                                    </>
+                                                  );
+                                              })()}
+                                           </div>
+                                        </div>
+                                        <input
+                                          type="number"
+                                          className="w-full bg-transparent text-xl font-black text-indigo-600 outline-none p-0 placeholder:text-indigo-200"
+                                          placeholder="0"
+                                          value={row.pataQty}
+                                          onChange={(e) => {
+                                            const n = [...issueSizes];
+                                            n[idx].pataQty = e.target.value;
+                                            setIssueSizes(n);
+                                          }}
+                                        />
+                                    </div>
+                                  )}
                                </div>
                              </div>
                            )
@@ -1378,6 +1444,15 @@ const FactoryPanel = ({
           </span>
         </button>
       </div>
+      {/* High-Fi Floating Action Button for Job Assignment */}
+      <button 
+        onClick={() => setShowIssueModal(true)}
+        className="fixed bottom-12 right-12 md:right-16 w-24 h-24 bg-black text-white rounded-full shadow-[0_35px_60px_-15px_rgba(0,0,0,0.4)] flex flex-col items-center justify-center hover:scale-110 active:scale-95 transition-all z-[250] border-8 border-white ring-4 ring-black/5 group"
+      >
+        <Plus size={36} strokeWidth={4} className="group-hover:rotate-180 transition-transform duration-700" />
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] mt-2 italic">Add Job</span>
+        <div className="absolute inset-0 rounded-full border-2 border-white/20 animate-pulse scale-90"></div>
+      </button>
     </div>
   );
 };

@@ -270,32 +270,33 @@ const ExpensePanel = ({
         </div>
       </div>
 
-      <div className="flex bg-white p-3 rounded-2xl border border-slate-100 shadow-sm overflow-x-auto mb-10 gap-2">
-        {["new", "daily", isAdmin && "cashIn", "worker", "invoice", isAdmin && "report"].filter(Boolean).map((v) => (
-          <button
-            key={v}
-            onClick={() => {
-                 setActiveTab(v);
-            }}
-            className={`flex-1 py-8 px-8 rounded-full font-black uppercase text-[10px] md:text-xs tracking-widest transition-all whitespace-nowrap min-w-[120px] ${activeTab === v ? "bg-black text-white shadow-3xl italic scale-[1.02]" : "text-slate-400 hover:text-black hover:bg-slate-50"}`}
-          >
-            {v === "new" ? "নতুন এন্ট্রি" : v === "daily" ? "ডেইলি খরচ" : v === "cashIn" ? "ক্যাশ-ইন" : v === "worker" ? "শিল্পী বিবরণ" : v === "invoice" ? "ইনভয়েস" : "হিসাব বহি"}
-          </button>
-        ))}
-      </div>
-
-      <div className="mb-10 relative group">
-        <Search
-          size={24}
-          className="absolute left-10 top-1/2 -translate-y-1/2 text-slate-100 group-focus-within:text-black transition-colors"
-        />
-        <input
-          type="text"
-          placeholder="QUERY FINANCIAL RECORDS..."
-          className="w-full bg-white border-4 border-slate-50 rounded-3xl px-20 py-10 md:py-12 text-3xl md:text-2xl font-black italic outline-none placeholder:text-slate-100 focus:border-black shadow-3xl transition-all uppercase"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+      {/* Unified Floating Filter Bar */}
+      <div className="floating-header-group mb-12 p-3 dark:bg-zinc-900 border-none shadow-2xl">
+          <div className="flex flex-col lg:flex-row items-center gap-6 w-full">
+              <div className="flex items-center gap-2 bg-slate-100 dark:bg-black/50 p-2 rounded-2xl w-full lg:w-auto overflow-x-auto no-scrollbar">
+                  {["new", "daily", isAdmin && "cashIn", "worker", "invoice", isAdmin && "report"].filter(Boolean).map((v) => (
+                    <button
+                      key={v}
+                      onClick={() => setActiveTab(v)}
+                      className={`px-8 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === v ? 'bg-black text-white dark:bg-white dark:text-black shadow-lg italic' : 'text-slate-400 hover:text-black dark:hover:text-white'}`}
+                    >
+                      {v === "new" ? "নতুন এন্ট্রি" : v === "daily" ? "ডেইলি খরচ" : v === "cashIn" ? "ক্যাশ-ইন" : v === "worker" ? "শিল্পী বিবরণ" : v === "invoice" ? "ইনভয়েস" : "হিসাব বহি"}
+                    </button>
+                  ))}
+              </div>
+              
+              <div className="flex-1 relative w-full group">
+                  <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none text-slate-300 group-focus-within:text-black dark:group-focus-within:text-white transition-colors">
+                      <Search size={16} />
+                  </div>
+                  <input
+                    placeholder="QUERY FINANCIAL RECORDS..."
+                    className="w-full bg-slate-50 dark:bg-black/20 h-16 rounded-2xl pl-16 pr-8 text-xs font-black uppercase tracking-widest italic outline-none border border-transparent focus:border-black/10 dark:focus:border-white/10 transition-all text-black dark:text-white"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+              </div>
+          </div>
       </div>
       {activeTab === "new" && (
         <div className="flex justify-center animate-fade-up">

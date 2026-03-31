@@ -4,6 +4,8 @@ import { X, Camera, ShieldAlert } from 'lucide-react';
 
 const QRScanner = ({ onScanSuccess, onClose }) => {
     const scannerRef = useRef(null);
+    const [scannedItems, setScannedItems] = React.useState([]);
+    const [isBulk, setIsBulk] = React.useState(false);
 
     useEffect(() => {
         const scanner = new Html5QrcodeScanner(
@@ -18,14 +20,22 @@ const QRScanner = ({ onScanSuccess, onClose }) => {
 
         scanner.render(
             (decodedText) => {
-                scanner.clear().then(() => {
-                    onScanSuccess(decodedText);
-                    onClose();
-                }).catch(err => {
-                    console.error("Failed to clear scanner:", err);
-                    onScanSuccess(decodedText);
-                    onClose();
-                });
+                if (!isBulk) {
+                    scanner.clear().then(() => {
+                        onScanSuccess(decodedText);
+                        onClose();
+                    }).catch(err => {
+                        console.error("Failed to clear scanner:", err);
+                        onScanSuccess(decodedText);
+                        onClose();
+                    });
+                } else {
+                    if (!scannedItems.includes(decodedText)) {
+                        setScannedItems(prev => [decodedText, ...prev]);
+                        onScanSuccess(decodedText); // Notify parent but keep scanning
+                        // Play a quick success beep if needed
+                    }
+                }
             },
             (errorMessage) => {
                 // parse error, ignore it
@@ -76,15 +86,37 @@ const QRScanner = ({ onScanSuccess, onClose }) => {
                     </button>
                 </div>
 
-                <div className="p-8 bg-slate-50">
+                <div className="p-8 bg-slate-50 flex flex-col gap-6">
                     <div id="reader" className="rounded-3xl overflow-hidden shadow-inner bg-white border-2 border-slate-100" />
+                    
+                    <button 
+                        onClick={() => setIsBulk(!isBulk)}
+                        className={`w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-3 ${isBulk ? 'bg-emerald-500 text-white shadow-xl shadow-emerald-500/20' : 'bg-slate-100 text-slate-400 hover:text-black'}`}
+                    >
+                        <div className={`w-2 h-2 rounded-full ${isBulk ? 'bg-white animate-pulse' : 'bg-slate-300'}`} />
+                        Bulk Batch Mode: {isBulk ? 'ON' : 'OFF'}
+                    </button>
                 </div>
 
-                <div className="p-8 bg-white text-center">
-                    <div className="flex items-center justify-center gap-2 mb-4">
-                        <ShieldAlert size={14} className="text-amber-500" />
-                        <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest">Place QR inside the box</p>
+                <div className="p-8 bg-white border-t border-slate-50">
+                    <div className="flex items-center justify-between gap-4 mb-6">
+                        <div className="flex items-center gap-3">
+                            <ShieldAlert size={14} className={isBulk ? "text-emerald-500" : "text-amber-500"} />
+                            <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest italic">{isBulk ? "Multiple Scans Active" : "Single Item Session"}</p>
+                        </div>
+                        {isBulk && <span className="text-[10px] font-black text-emerald-500 uppercase">{scannedItems.length} Scanned</span>}
                     </div>
+
+                    {isBulk && scannedItems.length > 0 && (
+                        <div className="max-h-[150px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                            {scannedItems.map((item, idx) => (
+                                <div key={idx} className="p-4 bg-slate-50 rounded-xl flex justify-between items-center animate-fade-up">
+                                    <p className="text-[10px] font-black italic tracking-tighter truncate max-w-[200px]">LOT #{item}</p>
+                                    <div className="px-3 py-1 bg-emerald-100 text-emerald-600 rounded-full text-[8px] font-black uppercase italic">Captured</div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

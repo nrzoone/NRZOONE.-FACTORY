@@ -7,10 +7,24 @@ const QR_Slip_Theme = {
   components: { Card: { paddingLG: 16 }, Typography: { fontSizeHeading4: 18, fontSizeHeading5: 14 } }
 };
 
-import { ExternalLink, Plus, Trash2, CheckCircle, Clock, DollarSign, X, Search, Printer, MessageSquare, ArrowLeft, CheckCircle2, Archive, Scissors, Settings, Box, History } from 'lucide-react';
+import {
+  Plus,
+  Trash2,
+  X,
+  Printer,
+  ArrowLeft,
+  Settings,
+  Search,
+  Camera,
+  CheckCircle,
+  ExternalLink,
+  DollarSign,
+  Box
+} from "lucide-react";
 import { syncToSheet } from '../../utils/syncUtils';
 import logoWhite from '../../assets/logo_white.png';
 import logoBlack from '../../assets/logo_black.png';
+import QRScanner from '../QRScanner';
 
 const OutsideWorkPanel = ({ masterData, setMasterData, showNotify, user, setActivePanel, t }) => {
     const [showModal, setShowModal] = useState(false);
@@ -23,9 +37,12 @@ const OutsideWorkPanel = ({ masterData, setMasterData, showNotify, user, setActi
     const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
     const [printSlip, setPrintSlip] = useState(null);
     const [editModal, setEditModal] = useState(null);
+    const [showQR, setShowQR] = useState(false);
 
     const isAdmin = user?.role === 'admin';
+    const isManager = user?.role === 'manager';
     const isWorker = user?.role !== 'admin' && user?.role !== 'manager';
+
 
     const [entryData, setEntryData] = useState({
         worker: '',
@@ -201,93 +218,65 @@ const OutsideWorkPanel = ({ masterData, setMasterData, showNotify, user, setActi
     const historyEntries = filteredEntries.filter(e => e.status === 'Received');
 
     if (printSlip) {
-        const SlipCard = ({ copyTitle }) => {
-            return (
+        const SlipCard = ({ copyTitle }) => (
             <ConfigProvider theme={QR_Slip_Theme}>
-                <div style={{ minHeight: '140mm' }} className="w-full flex-1 border-[6px] border-black bg-white relative overflow-hidden flex text-black">
-                    <div className="w-20 bg-white border-r-[3px] border-black flex flex-col items-center justify-between py-8 shrink-0">
-                        <img src={logoBlack} alt="NRZO0NE" className="w-12 h-12 object-contain" />
-                        <div className="rotate-[-90deg] whitespace-nowrap">
-                            <p className="text-[10px] font-black uppercase tracking-[0.5em] text-black">NRZO0NE OUTSOURCE UNIT</p>
+              <div className="w-full bg-white flex flex-col relative overflow-hidden border-2 border-black p-12" style={{ height: '148.5mm' }}>
+                   <div className="flex justify-between items-start border-b-4 border-black pb-8 mb-8">
+                      <div>
+                         <h1 className="text-4xl font-black tracking-tighter uppercase leading-none">NRZO0NE</h1>
+                         <p className="text-[10px] font-black uppercase tracking-[0.6em] text-slate-400 mt-2">EXTERNAL OPERATIONS • OUTSOURCE</p>
+                      </div>
+                      <div className="text-right">
+                         <p className="text-xl font-black uppercase tracking-widest italic decoration-double">TASK: {printSlip.task}</p>
+                         <p className="text-sm font-black text-slate-400 mt-1">{printSlip.date}</p>
+                      </div>
+                   </div>
+
+                   <div className="flex-1 flex flex-col justify-center gap-12">
+                        <div className="grid grid-cols-1 gap-12">
+                            <div className="border-4 border-black p-8 bg-slate-50 rounded-[2rem]">
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">IDENTIFIED CONTRACTOR</p>
+                                <p className="text-5xl font-black uppercase truncate">{printSlip.worker}</p>
+                            </div>
                         </div>
-                        <div className="w-10 h-10 border-2 border-black rounded-full flex items-center justify-center">
-                            <div className="w-4 h-4 rounded-full bg-black animate-pulse"></div>
+
+                        <div className="grid grid-cols-12 gap-8 items-center border-y-4 border-black py-12">
+                            <div className="col-span-8 flex gap-12">
+                                <div className="text-center group">
+                                    <p className="text-[11px] font-black uppercase text-slate-400 mb-2">Borka Qty</p>
+                                    <p className="text-7xl font-black italic">{printSlip.borkaQty}</p>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-[11px] font-black uppercase text-slate-400 mb-2">Hijab Qty</p>
+                                    <p className="text-7xl font-black italic">{printSlip.hijabQty}</p>
+                                </div>
+                            </div>
+                            <div className="col-span-4 flex items-center justify-end gap-6">
+                                <div className="text-right">
+                                    <p className="text-[10px] font-black uppercase text-slate-400 mb-1 tracking-widest">NR-EXT ID</p>
+                                    <p className="text-xs font-black italic opacity-30">{printSlip.id}</p>
+                                </div>
+                                <QRCode value={printSlip.id} size={110} bordered={false} style={{ padding: 0 }} />
+                            </div>
                         </div>
-                    </div>
+                   </div>
 
-                    <div className="flex-1 p-6 relative flex flex-col items-center justify-center bg-white">
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] -rotate-12 pointer-events-none">
-                            <img src={logoBlack} alt="" className="w-80 h-80 object-contain" />
+                   <div className="mt-8 pt-8 flex justify-between items-center border-t-2 border-dashed border-slate-200">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-black rounded flex items-center justify-center p-2">
+                              <img src={logoWhite} className="w-full h-full object-contain" alt="NR" />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black italic">SMART TRACK™ EXTERNAL NODE</p>
+                            </div>
                         </div>
-                        
-                        <Card 
-                            style={{ width: '100%', height: '100%', border: '2px solid #000', borderRadius: '12px', display: 'flex', flexDirection: 'column', zIndex: 10, position: 'relative' }}
-                            bodyStyle={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column' }}
-                            hoverable={false}
-                        >
-                            <Row justify="space-between" align="middle">
-                                <Col>
-                                    <Title level={4} style={{ margin: 0, letterSpacing: '1px', fontStyle: 'italic', fontWeight: '900' }}>NRZO0NE</Title>
-                                    <Text type="secondary" style={{ fontSize: '10px', letterSpacing: '2px', textTransform: 'uppercase' }}>OUTSOURCE OPERATIONS UNIT</Text>
-                                </Col>
-                                <Col style={{ textAlign: 'right' }}>
-                                    <Tag color="black" style={{ margin: 0, fontWeight: 'bold' }}>{copyTitle}</Tag>
-                                    <br />
-                                    <Text strong style={{ fontSize: '12px', display: 'inline-block', marginTop: '4px' }}>{printSlip.date}</Text>
-                                </Col>
-                            </Row>
-
-                            <Divider style={{ margin: '14px 0', borderBlockStart: '2px solid #000' }} />
-
-                            <Row gutter={16}>
-                                <Col span={12}>
-                                    <div style={{ background: '#f8f9fa', padding: '10px', borderRadius: '8px', textAlign: 'center', border: '1px solid #f0f0f0' }}>
-                                        <Text type="secondary" style={{ fontSize: '9px', fontWeight: 'bold', letterSpacing: '1px' }}>CONTRACTOR / কারিগর</Text>
-                                        <Title level={4} style={{ margin: '4px 0 0 0', fontStyle: 'italic', textTransform: 'uppercase' }}>{printSlip.worker}</Title>
-                                    </div>
-                                </Col>
-                                <Col span={12}>
-                                    <div style={{ background: '#fff', padding: '10px', borderRadius: '8px', textAlign: 'center', border: '2px solid #000' }}>
-                                        <Text style={{ fontSize: '9px', color: '#000', letterSpacing: '1px', fontWeight: 'bold' }}>TASK / কাজের ধরন</Text>
-                                        <Title level={4} style={{ margin: '4px 0 0 0', color: '#000', fontStyle: 'italic', textTransform: 'uppercase', fontWeight: '900' }}>{printSlip.task}</Title>
-                                    </div>
-                                </Col>
-                            </Row>
-
-                            <Row gutter={16} style={{ marginTop: '16px', flex: 1 }}>
-                                <Col span={12}>
-                                    <Card style={{ textAlign: 'center', border: '2px dashed #000', background: '#fff', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }} bodyStyle={{ padding: '24px' }}>
-                                        <Text style={{ fontSize: '12px', color: '#000', fontWeight: 'bold', letterSpacing: '2px' }}>BORKA QTY</Text>
-                                        <Title level={1} style={{ margin: '8px 0 0 0', color: '#f5222d', fontStyle: 'italic', fontSize: '56px', fontWeight: '900' }}>{printSlip.borkaQty || 0}</Title>
-                                    </Card>
-                                </Col>
-                                <Col span={12}>
-                                    <Card style={{ textAlign: 'center', border: '2px dashed #000', background: '#fff', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }} bodyStyle={{ padding: '24px' }}>
-                                        <Text style={{ fontSize: '12px', color: '#000', fontWeight: 'bold', letterSpacing: '2px' }}>HIJAB QTY</Text>
-                                        <Title level={1} style={{ margin: '8px 0 0 0', color: '#1d39c4', fontStyle: 'italic', fontSize: '56px', fontWeight: '900' }}>{printSlip.hijabQty || 0}</Title>
-                                    </Card>
-                                </Col>
-                            </Row>
-
-                            <Divider dashed style={{ margin: '16px 0 12px 0' }} />
-                            <Row align="middle" justify="space-between">
-                                <Col>
-                                    {typeof window !== 'undefined' && (
-                                        <QRCode value={`${window.location.origin}?track=${printSlip.id}`} size={110} bordered={false} style={{ margin: '-4px' }} color="#000" />
-                                    )}
-                                </Col>
-                                <Col style={{ textAlign: 'right' }}>
-                                    <Text style={{ fontSize: '11px', fontWeight: 'bold', letterSpacing: '1px' }}>NRZO0NE SMART TRACK™</Text>
-                                    <br />
-                                    <Text type="secondary" style={{ fontSize: '9px' }}>Generated by NRZO0NE OUTSOURCE UNIT • ID: {printSlip.id}</Text>
-                                </Col>
-                            </Row>
-                        </Card>
-                    </div>
-                </div>
+                        <div className="px-12 py-4 bg-black text-white rounded-[2rem] font-black uppercase tracking-[0.4em] italic text-xl">
+                            {copyTitle}
+                        </div>
+                   </div>
+              </div>
             </ConfigProvider>
-            );
-        };
+        );
 
         return (
             <div className="min-h-screen bg-white text-black italic font-outfit py-10 print:py-0 print:bg-white text-black italic">
@@ -343,43 +332,80 @@ const OutsideWorkPanel = ({ masterData, setMasterData, showNotify, user, setActi
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-6 w-full md:w-auto">
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          <div className="flex bg-slate-50 border-2 border-slate-100 rounded-3xl p-1 items-center shadow-inner group focus-within:border-black transition-all">
+            <div className="pl-4 text-slate-300 group-focus-within:text-black">
+               <Search size={16} />
+            </div>
+            <input
+              className="bg-transparent border-none outline-none font-black italic uppercase text-[10px] py-4 px-3 w-40 md:w-64 placeholder:text-slate-300"
+              placeholder="OUTSIDE / WORKER / TASK..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <button 
+              onClick={() => setShowQR(true)}
+              className="w-10 h-10 bg-black text-white rounded-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg mx-1"
+              title="QR RECEIVE"
+            >
+               <Camera size={16} />
+            </button>
+          </div>
+
           <div className="bg-white px-6 py-3 rounded-2xl border border-slate-100 shadow-sm hidden md:block">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Pending Tasks</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">External Base</p>
             <p className="text-2xl font-black italic text-black leading-none uppercase">
-                {activeEntries.length} <span className="text-[10px] text-slate-300 ml-1">Nodes</span>
+                {activeEntries.length} <span className="text-[10px] text-slate-300 ml-1">Live</span>
             </p>
           </div>
         </div>
       </div>
 
-      <div className="flex bg-white p-2 rounded-2xl border border-slate-100 shadow-sm overflow-x-auto mb-10">
-        {['new', 'active', 'history', (isAdmin || isManager) && 'payments'].filter(Boolean).map(v => (
-          <button
-            key={v}
-            onClick={() => {
-                if (v === 'new') setShowModal(true);
-                else setView(v);
-            }}
-            className={`pill-tab flex-1 whitespace-nowrap min-w-[100px] ${view === v ? "pill-tab-active" : "pill-tab-inactive hover:text-black"}`}
-          >
-            {v === 'new' ? 'নতুন কাজ' : v === 'active' ? 'চলমান' : v === 'history' ? 'পুরাতন' : 'লেজার ও পেমেন্ট'}
-          </button>
-        ))}
+      {showQR && (
+        <QRScanner
+          onScanSuccess={(code) => {
+             const lot = (masterData.outsideWorkEntries || []).find(p => String(p.id) === String(code) && p.status === 'Pending');
+             if (lot) {
+                setReceiveModal({ ...lot, rBorkaQty: lot.borkaQty, rHijabQty: lot.hijabQty, receiveDate: new Date().toISOString().split('T')[0] });
+                showNotify(`External ID #${code} Identified. Logistics Clear.`);
+             } else {
+                showNotify(`External ID #${code} not found in pending queue.`, "error");
+             }
+          }}
+          onClose={() => setShowQR(false)}
+        />
+      )}
+
+      {/* Unified Floating Filter Bar */}
+      <div className="floating-header-group mb-12 p-2 dark:bg-zinc-900 border-none shadow-2xl">
+          <div className="flex flex-col lg:flex-row items-center gap-4 w-full">
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-black/50 p-1.5 rounded-2xl w-full lg:w-auto">
+                  {['active', 'history', (isAdmin || isManager) && 'payments'].filter(Boolean).map(v => (
+                    <button
+                      key={v}
+                      onClick={() => setView(v)}
+                      className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${view === v ? 'bg-black text-white dark:bg-white dark:text-black shadow-lg' : 'text-slate-400 hover:text-black dark:hover:text-white'}`}
+                    >
+                      {v === 'active' ? 'চলমান' : v === 'history' ? 'পুরাতন' : 'লেজার ও পেমেন্ট'}
+                    </button>
+                  ))}
+              </div>
+              
+              <div className="flex-1 relative w-full group">
+                  <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none text-slate-300 group-focus-within:text-black dark:group-focus-within:text-white transition-colors">
+                      <Search size={16} />
+                  </div>
+                  <input
+                      placeholder="সার্চ কারিগর বা কাজের বিবরণ..."
+                      className="w-full bg-slate-50 dark:bg-black/20 h-14 rounded-2xl pl-16 pr-8 text-xs font-black uppercase tracking-widest italic outline-none border border-transparent focus:border-black/10 dark:focus:border-white/10 transition-all text-black dark:text-white"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+              </div>
+          </div>
       </div>
 
       <div className="space-y-4">
-        <div className="relative group mb-8">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-black transition-colors" size={20} />
-            <input 
-              type="text" 
-              placeholder="সার্চ কারিগর বা কাজের বিবরণ..."
-              className="form-input pl-16 py-5 text-base border-slate-200"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-        </div>
-
         <div className="space-y-4">
             {(view === 'active' ? activeEntries : historyEntries).length === 0 ? (
                 <div className="h-64 flex flex-col items-center justify-center bg-white rounded-3xl border-2 border-dashed border-slate-100 opacity-40">
@@ -476,62 +502,72 @@ const OutsideWorkPanel = ({ masterData, setMasterData, showNotify, user, setActi
       </div>
 
             {showModal && (
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-3xl z-[200] flex items-start md:items-center justify-center p-2 md:p-4 italic overflow-y-auto">
-                    <div className="bg-white rounded-[2.5rem] md:rounded-[5rem] w-full max-w-4xl border-4 border-black shadow-3xl animate-fade-up my-auto flex flex-col text-black h-auto">
-                        <div className="p-10 border-b-2 border-slate-100 flex justify-between items-center bg-gray-50">
-                            <h3 className="font-black uppercase text-4xl tracking-tighter">Baire Kaj Deoya (Issue)</h3>
-                            <button onClick={() => setShowModal(false)} className="p-4 bg-white border-2 border-slate-100 rounded-full hover:bg-black hover:text-white transition-all shadow-sm"><X size={24} /></button>
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-3xl z-[250] flex items-start md:items-center justify-center p-2 md:p-4 overflow-y-auto">
+                    <div className="bg-white w-full max-w-4xl my-auto rounded-3xl border-2 border-black shadow-3xl p-6 md:p-16 space-y-12 animate-fade-up text-black italic relative font-outfit uppercase">
+                        <button onClick={() => setShowModal(false)} className="absolute top-8 right-8 p-4 bg-slate-50 hover:bg-black hover:text-white rounded-full transition-all z-10 border border-slate-100 shadow-sm"><X size={24} /></button>
+                        
+                        <div className="text-center space-y-4">
+                            <div className="mx-auto w-14 h-14 bg-black text-white rounded-full flex items-center justify-center shadow-2xl">
+                                <Plus size={32} strokeWidth={3} />
+                            </div>
+                            <h3 className="text-3xl md:text-4xl font-black italic tracking-tighter uppercase leading-none">
+                                <span className="text-black">External</span> <span className="text-transparent" style={{ WebkitTextStroke: "1px #cbd5e1" }}>Task</span>
+                            </h3>
+                            <p className="inline-block px-4 py-1.5 bg-slate-100 text-slate-600 rounded-full text-[10px] font-black uppercase tracking-widest italic">
+                                OUTSOURCE UNIT MODE
+                            </p>
                         </div>
 
-                        <div className="p-12 space-y-8 overflow-y-auto">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                            <div className="lg:col-span-6 space-y-8">
                                 <div className="space-y-4">
-                                    <label className="text-xs font-black text-slate-600 uppercase tracking-widest ml-4">Worker / Karigor</label>
-                                    <select className="form-input text-xl font-black border-2 border-slate-100 rounded-[2rem] bg-gray-50 h-16 w-full px-6" value={entryData.worker} onChange={(e) => setEntryData(p => ({ ...p, worker: e.target.value }))}>
-                                        <option value="">Select Worker</option>
+                                    <label className="text-xs font-black text-black uppercase tracking-widest">Select Contractor (কারিগর)</label>
+                                    <select className="premium-input bg-black text-white px-6 py-4 rounded-2xl h-16 w-full font-black text-sm uppercase appearance-none" value={entryData.worker} onChange={(e) => setEntryData(p => ({ ...p, worker: e.target.value }))}>
+                                        <option value="">-- SELECT WORKER --</option>
                                         {(masterData.outsideWorkers || []).map(w => <option key={w} value={w}>{w}</option>)}
                                     </select>
                                 </div>
                                 <div className="space-y-4">
-                                    <label className="text-xs font-black text-slate-600 uppercase tracking-widest ml-4">Work / Task Type</label>
-                                    <select className="form-input text-xl font-black border-2 border-slate-100 rounded-[2rem] bg-gray-50 h-16 w-full px-6" value={entryData.task} onChange={(e) => setEntryData(p => ({ ...p, task: e.target.value }))}>
-                                        <option value="">Select Task</option>
+                                    <label className="text-xs font-black text-black uppercase tracking-widest">Work Type (কাজ)</label>
+                                    <select className="premium-input bg-slate-50 border-slate-100 px-6 py-4 rounded-2xl h-16 w-full font-black text-sm uppercase appearance-none" value={entryData.task} onChange={(e) => setEntryData(p => ({ ...p, task: e.target.value }))}>
+                                        <option value="">-- SELECT TASK --</option>
                                         {(masterData.outsideTasks || []).map(t => <option key={t} value={t}>{t}</option>)}
                                     </select>
                                 </div>
-                                <div className="space-y-4">
-                                    <label className="text-xs font-black text-slate-600 uppercase tracking-widest ml-4">Issue Date</label>
-                                    <input type="date" className="w-full h-16 bg-black text-white rounded-[2rem] px-8 border-none font-black text-xl outline-none focus:ring-4 focus:ring-black/20" value={entryData.date} onChange={(e) => setEntryData(p => ({ ...p, date: e.target.value }))} />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Rate</p>
+                                        <input type="number" className="w-full bg-transparent text-xl font-black text-emerald-600 outline-none" placeholder="৳0" value={entryData.rate} onChange={(e) => setEntryData(p => ({ ...p, rate: e.target.value }))} />
+                                    </div>
+                                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Date</p>
+                                        <input type="date" className="w-full bg-transparent text-xs font-black outline-none" value={entryData.date} onChange={(e) => setEntryData(p => ({ ...p, date: e.target.value }))} />
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                <div className="bg-slate-50 p-8 rounded-[3rem] border-2 border-slate-100">
-                                    <label className="text-[10px] font-black text-slate-600 uppercase block mb-2">Borka (PCS)</label>
-                                    <input type="number" className="w-full bg-transparent text-4xl font-black outline-none italic" placeholder="0" value={entryData.borkaQty} onChange={(e) => setEntryData(p => ({ ...p, borkaQty: e.target.value }))} />
+                            <div className="lg:col-span-6 flex flex-col gap-8 bg-slate-50 p-8 rounded-[2rem] border border-slate-100">
+                                <label className="text-xs font-black text-black uppercase tracking-widest">Quantities & Notes</label>
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Borka</p>
+                                        <input type="number" className="w-full text-center text-4xl font-black outline-none" placeholder="0" value={entryData.borkaQty} onChange={(e) => setEntryData(p => ({ ...p, borkaQty: e.target.value }))} />
+                                    </div>
+                                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm text-center">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase mb-2">Hijab</p>
+                                        <input type="number" className="w-full text-center text-4xl font-black outline-none" placeholder="0" value={entryData.hijabQty} onChange={(e) => setEntryData(p => ({ ...p, hijabQty: e.target.value }))} />
+                                    </div>
                                 </div>
-                                <div className="bg-slate-50 p-8 rounded-[3rem] border-2 border-slate-100">
-                                    <label className="text-[10px] font-black text-slate-600 uppercase block mb-2">Hijab (PCS)</label>
-                                    <input type="number" className="w-full bg-transparent text-4xl font-black outline-none italic" placeholder="0" value={entryData.hijabQty} onChange={(e) => setEntryData(p => ({ ...p, hijabQty: e.target.value }))} />
-                                </div>
-                                <div className="bg-black p-8 rounded-[3rem] shadow-2xl">
-                                    <label className="text-[10px] font-black text-white/40 uppercase block mb-2">Rate (Per PCS)</label>
-                                    <input type="number" className="w-full bg-transparent text-4xl font-black text-white outline-none italic" placeholder="৳0" value={entryData.rate} onChange={(e) => setEntryData(p => ({ ...p, rate: e.target.value }))} />
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <label className="text-xs font-black text-slate-600 uppercase tracking-widest ml-4">Note (Optional)</label>
-                                <input type="text" className="form-input text-xl font-black border-2 border-slate-100 rounded-[2rem] bg-gray-50 h-16 w-full px-8" placeholder="Enter notes..." value={entryData.note} onChange={(e) => setEntryData(p => ({ ...p, note: e.target.value }))} />
+                                <textarea className="w-full bg-white border border-slate-200 rounded-2xl p-6 font-bold text-sm h-32 outline-none focus:border-black transition-all" placeholder="Optional Remarks..." value={entryData.note} onChange={(e) => setEntryData(p => ({ ...p, note: e.target.value }))} />
                             </div>
                         </div>
 
-                        <div className="p-12 bg-gray-50 flex gap-4">
-                            <button onClick={() => handleSaveIssue(false)} className="flex-1 py-10 bg-rose-500 text-white rounded-full font-black text-2xl uppercase tracking-[0.2em] shadow-2xl border-b-[12px] border-rose-900 active:translate-y-2 transition-all">
+                        <div className="flex gap-4 pt-12 border-t border-slate-100">
+                            <button onClick={() => handleSaveIssue(false)} className="flex-1 py-6 bg-black text-white rounded-full font-black text-xl uppercase tracking-widest shadow-2xl hover:scale-105 active:scale-95 transition-all outline-none">
                                 CONFIRM ISSUE
                             </button>
-                            <button onClick={() => handleSaveIssue(true)} className="flex-1 py-10 bg-indigo-600 text-white rounded-full font-black text-2xl uppercase tracking-[0.2em] shadow-2xl border-b-[12px] border-indigo-900 active:translate-y-2 transition-all flex items-center justify-center gap-3">
-                                <Printer size={32} /> & PRINT
+                            <button onClick={() => handleSaveIssue(true)} className="flex-1 py-6 bg-indigo-600 text-white rounded-full font-black text-xl uppercase tracking-widest shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 outline-none">
+                                <Printer size={24} /> & PRINT
                             </button>
                         </div>
                     </div>
@@ -660,19 +696,15 @@ const OutsideWorkPanel = ({ masterData, setMasterData, showNotify, user, setActi
                     </div>
                 )
             }
-            {/* Back Button Bottom */}
-            <div className="pt-20 pb-10 flex justify-center">
-                <button
-                    onClick={() => setActivePanel('Overview')}
-                    className="group relative flex items-center gap-6 bg-white px-12 py-6 rounded-full border-4 border-slate-50 shadow-2xl hover:border-black transition-all duration-500"
-                >
-                    <div className="p-3 bg-black text-white rounded-2xl group-hover:rotate-[-12deg] transition-transform">
-                        <ArrowLeft size={20} strokeWidth={3} />
-                    </div>
-                    <span className="text-lg font-black uppercase italic tracking-widest text-black">Back to Dashboard</span>
-                    <div className="absolute -inset-1 bg-black/5 blur-2xl rounded-full -z-10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                </button>
-            </div>
+            {/* High-Fi Floating Action Button for Job Assignment */}
+            <button 
+                onClick={() => setShowModal(true)}
+                className="fixed bottom-12 right-12 md:right-16 w-24 h-24 bg-black text-white rounded-full shadow-[0_35px_60px_-15px_rgba(0,0,0,0.4)] flex flex-col items-center justify-center hover:scale-110 active:scale-95 transition-all z-[250] border-8 border-white ring-4 ring-black/5 group"
+            >
+                <Plus size={36} strokeWidth={4} className="group-hover:rotate-180 transition-transform duration-700" />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] mt-2 italic">Add Task</span>
+                <div className="absolute inset-0 rounded-full border-2 border-white/20 animate-pulse scale-90"></div>
+            </button>
         </div >
     );
 };

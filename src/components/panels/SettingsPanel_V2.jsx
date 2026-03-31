@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { storage } from "../../firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { generateWorkerPaySlip } from "../../services/pdfService";
 import logoWhite from "../../assets/logo_white.png";
 import logoBlack from "../../assets/logo_black.png";
 
@@ -240,6 +241,18 @@ const SettingsPanel = ({
       ...prev,
       users: prev.users.filter((u) => u.id !== id),
     }));
+  };
+
+  const handleAddWorker = (dept, name, wage) => {
+    if (!name.trim()) return showNotify("কর্মী নাম আবশ্যক!", "error");
+    handleSaveUnifiedWorker({
+      id: Date.now().toString(),
+      name: name.toUpperCase(),
+      dept,
+      wage: Number(wage) || 0,
+      phone: "",
+      joiningDate: new Date().toISOString().split("T")[0],
+    });
   };
 
   const handleAddDesign = (
@@ -448,828 +461,272 @@ const SettingsPanel = ({
     return merged;
   };
 
+  const renderUsersContent = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {masterData.users?.map((u, idx) => {
+        const isEditing = editingItem === `user-${idx}`;
+        return (
+          <div key={idx} className="bg-slate-50 dark:bg-black/40 p-10 rounded-[3rem] border-2 border-slate-100 dark:border-zinc-800 italic relative group shadow-sm min-h-[250px] flex flex-col justify-between">
+            <div className="flex justify-between items-start">
+              <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${u.role === 'admin' ? 'bg-black text-white dark:bg-white dark:text-black' : 'bg-white dark:bg-zinc-900 text-slate-400'}`}>
+                {u.role}
+              </span>
+              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                <button onClick={() => setEditingItem(`user-${idx}`)} className="p-2 text-slate-500 hover:text-black dark:hover:text-white"><Edit2 size={16} /></button>
+                {u.id !== "NRZO0NE" && <button onClick={() => handleDeleteUser(u.id)} className="p-2 text-rose-300 hover:text-rose-500"><Trash2 size={16} /></button>}
+              </div>
+            </div>
+            <div className="mt-8">
+              <h4 className="text-3xl font-black uppercase tracking-tighter italic leading-none">{u.name}</h4>
+              <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mt-2">{u.id}</p>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  const renderProductContent = () => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {[
+          { label: "Colors", cat: "colors", items: masterData.colors, icon: LayoutGrid },
+          { label: "Sizes", cat: "sizes", items: masterData.sizes, icon: Package },
+          { label: "Masters", cat: "cutters", items: masterData.cutters, icon: Scissors },
+          { label: "Pata Taxonomy", cat: "pataTypes", items: masterData.pataTypes, icon: LayoutGrid }
+        ].map((sec) => (
+          <button key={sec.label} onClick={() => setActiveTab(sec.cat)} className="flex items-center justify-between p-8 bg-slate-50 dark:bg-black/20 rounded-3xl border border-slate-100 dark:border-zinc-800 hover:border-black dark:hover:border-white transition-all group text-left">
+            <div className="flex items-center gap-6">
+              <div className="p-4 bg-white dark:bg-zinc-900 rounded-2xl group-hover:rotate-6 transition-transform"><sec.icon size={20} /></div>
+              <div>
+                 <h4 className="text-lg font-black uppercase italic leading-none">{sec.label}</h4>
+                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">{sec.items?.length || 0} NODES</p>
+              </div>
+            </div>
+            <ChevronRight size={16} className="text-slate-300" />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  const AccordionItem = ({ id, label, icon: Icon, description, children }) => {
+    const isOpen = activeTab === id || (id === 'product' && ['colors', 'sizes', 'cutters', 'pataTypes'].includes(activeTab));
+    return (
+      <div className={`mb-4 overflow-hidden rounded-[40px] border border-slate-100 dark:border-zinc-900 transition-all duration-500 ${isOpen ? 'bg-white dark:bg-zinc-900 shadow-2xl' : 'bg-slate-50/50 dark:bg-black/20'}`}>
+        <button 
+          onClick={() => setActiveTab(isOpen ? null : id)}
+          className="w-full flex items-center justify-between p-8 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors group"
+        >
+          <div className="flex items-center gap-6">
+            <div className={`p-5 rounded-2xl transition-all duration-500 ${isOpen ? 'bg-black text-white dark:bg-white dark:text-black shadow-xl rotate-6 scale-110' : 'bg-white dark:bg-zinc-900 group-hover:scale-110'}`}>
+               <Icon size={24} />
+            </div>
+            <div className="text-left">
+              <h3 className="text-2xl font-black uppercase italic leading-none">{label}</h3>
+              <p className="text-[10px] uppercase font-black text-slate-400 tracking-widest mt-2">{description}</p>
+            </div>
+          </div>
+          <div className={`transition-all duration-500 ${isOpen ? 'rotate-90 scale-125 text-black dark:text-white' : 'text-slate-300'}`}>
+             <ChevronRight size={24} />
+          </div>
+        </button>
+        
+        {isOpen && (
+          <div className="p-10 border-t border-slate-50 dark:border-zinc-800 animate-fade-up">
+            {children}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderPersonnelContent = () => (
+    <div className="space-y-8">
+      {['sewing', 'stone', 'pata'].map(dept => (
+        <div key={dept} className="bg-slate-50 dark:bg-black/20 p-8 rounded-[3rem] border border-slate-100 dark:border-zinc-800">
+          <div className="flex justify-between items-center mb-8 px-4">
+             <h4 className="text-xl font-black uppercase italic tracking-tighter">{dept} Operatives</h4>
+             <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{getUnifiedWorkers(dept).length} Staff</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {getUnifiedWorkers(dept).map((w, idx) => (
+              <div key={idx} className="bg-white dark:bg-zinc-900/50 p-6 rounded-3xl border border-slate-50 dark:border-zinc-800 hover:border-black dark:hover:border-white transition-all group relative overflow-hidden">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-10 h-10 bg-slate-50 dark:bg-white/5 rounded-xl flex items-center justify-center text-slate-300 group-hover:scale-110 transition-transform">
+                     <User size={18} />
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => setWorkerDocModal(w)} className="p-2 text-slate-400 hover:text-black dark:hover:text-white"><Edit2 size={14} /></button>
+                    {!w.isLegacy && <button onClick={() => handleDeleteUnifiedWorker(w.id, w.name, w.dept)} className="p-2 text-rose-300 hover:text-rose-500"><Trash2 size={14} /></button>}
+                  </div>
+                </div>
+                <h5 className="text-lg font-black uppercase italic truncate">{w.name}</h5>
+                <div className="flex justify-between items-end mt-4">
+                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic font-mono">WAGE: ৳{w.wage}</p>
+                   <button onClick={() => sendWhatsApp(w.phone, "NRZOONE Salary Update: আপনার বর্তমান মজুরি আপডেট করা হয়েছে।")} className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all shadow-sm">
+                      <MessageCircle size={14} strokeWidth={3} />
+                   </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  const renderAuditContent = () => (
+    <div className="bg-white dark:bg-zinc-900/50 rounded-[3rem] border border-slate-100 dark:border-zinc-900 overflow-hidden min-h-[400px]">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left italic">
+          <thead className="bg-slate-50 dark:bg-black/20 text-slate-400 font-black text-[11px] uppercase tracking-[0.2em]">
+            <tr>
+              <th className="px-8 py-6">Timestamp</th>
+              <th className="px-6 py-6">Node Creator</th>
+              <th className="px-6 py-6">Operation</th>
+              <th className="px-6 py-6">Detail Metadata</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+            {(masterData.auditLogs || []).slice(0, 50).map((log, i) => (
+              <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-all">
+                <td className="px-8 py-5">
+                   <p className="text-[10px] font-black opacity-30">{new Date(log.timestamp).toLocaleTimeString()}</p>
+                   <p className="text-[9px] font-bold text-slate-400">{new Date(log.timestamp).toLocaleDateString()}</p>
+                </td>
+                <td className="px-6 py-5">
+                   <p className="text-xs font-black uppercase">{log.user}</p>
+                   <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{log.role}</span>
+                </td>
+                <td className="px-6 py-5 font-black text-[10px] uppercase text-emerald-500 italic">{log.action}</td>
+                <td className="px-6 py-5 text-[10px] text-slate-500 truncate max-w-xs">{typeof log.details === 'string' ? log.details : JSON.stringify(log.details)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  const renderDatabaseContent = () => (
+    <div className="space-y-8 p-4">
+      <div className="bg-black text-white rounded-[3rem] p-12 text-center relative overflow-hidden group border-8 border-white/5">
+         <div className="relative z-10">
+            <h4 className="text-4xl font-black italic uppercase tracking-tighter mb-4">Master Archives</h4>
+            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest max-w-md mx-auto mb-10 italic">Secure production backups with instant node restoration capabilities.</p>
+            <div className="flex flex-col md:flex-row justify-center gap-4 px-10">
+               <button onClick={handleBackup} className="bg-white text-black px-10 py-6 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:scale-105 transition-all shadow-xl flex items-center justify-center gap-3 italic">
+                  <Download size={18} /> Download JSON
+               </button>
+               <label className="bg-zinc-800 text-white px-10 py-6 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-zinc-700 transition-all cursor-pointer flex items-center justify-center gap-3 italic border border-zinc-700">
+                  <Upload size={18} /> Restore Archive
+                  <input type="file" accept=".json" onChange={handleRestore} className="hidden" />
+               </label>
+            </div>
+         </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+         {['productions', 'cuttingStock', 'pataEntries', 'deliveries', 'attendance'].map(key => (
+            <div key={key} className="bg-slate-50 dark:bg-black/20 p-8 rounded-[3rem] flex justify-between items-center group hover:border-rose-500 transition-all border border-transparent">
+               <div>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{key.toUpperCase()}</p>
+                  <p className="text-2xl font-black italic tracking-tighter">{masterData[key]?.length || 0}</p>
+               </div>
+               <button onClick={() => { if(confirm(`Wipe all ${key}?`)) setMasterData(prev => ({...prev, [key]: []})); }} className="w-10 h-10 rounded-xl bg-white dark:bg-zinc-800 text-rose-500 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all shadow-sm opacity-20 group-hover:opacity-100">
+                  <Trash2 size={16} />
+               </button>
+            </div>
+         ))}
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-4 pb-24 animate-fade-up px-2 italic text-black font-outfit">
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => setActivePanel("Overview")}
-          className="p-3 bg-white text-black rounded-xl border-2 border-slate-100 shadow-md hover:bg-black hover:text-white transition-all"
-        >
-          <ArrowLeft size={20} strokeWidth={3} />
-        </button>
-        <div className="bg-black rounded-2xl p-2.5 shadow-xl shrink-0">
-          <img
-            src={logoWhite}
-            alt="NRZO0NE"
-            className="w-8 h-8 object-contain"
-          />
-        </div>
-        <div>
-          <h2 className="text-xl md:text-3xl font-black uppercase italic tracking-tighter leading-none text-black">
-            System <span className="text-slate-400">Settings</span>
-          </h2>
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
-            Master Configuration Hub
-          </p>
-        </div>
-      </div>
-
-      <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-100 overflow-x-auto no-scrollbar gap-1">
-        {[
-          { id: "profile", label: "MY PROFILE", icon: <User size={16} /> },
-          { id: "users", label: "IDENTITY", icon: <ShieldCheck size={16} /> },
-          { id: "workers", label: "TEAM DIRECTORY", icon: <Users size={16} /> },
-          { id: "designs", label: "DESIGNS", icon: <Package size={16} /> },
-          { id: "colors", label: "COLORS", icon: <Plus size={16} /> },
-          { id: "sizes", label: "SIZES", icon: <LayoutGrid size={16} /> },
-          { id: "cutters", label: "MASTERS", icon: <Scissors size={16} /> },
-          { id: "pata", label: "PATA", icon: <LayoutGrid size={16} /> },
-          { id: "database", label: "DATABASE", icon: <Database size={16} /> },
-        ].map((tab) => {
-          if (
-            ["users", "database"].includes(tab.id) &&
-            currentUser?.role !== "admin" &&
-            currentUser?.id !== "NRZO0NE"
-          )
-            return null;
-
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 min-w-[80px] py-2 rounded-lg font-black text-[8px] uppercase tracking-[0.15em] transition-all italic flex flex-col items-center gap-1.5 ${activeTab === tab.id ? "bg-black text-white shadow-md" : "text-slate-400 hover:text-black hover:bg-slate-100"}`}
-            >
-              {tab.icon}
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="space-y-12">
-        {activeTab === "workers" && (
-          <div className="space-y-12">
-            {/* Summary Header */}
-            <div className="bg-white p-8 md:p-12 rounded-[4rem] border-4 border-slate-50 shadow-2xl flex justify-between items-center italic">
-              <div className="flex items-center gap-4 md:gap-8">
-                <div className="p-4 md:p-6 bg-black text-white rounded-2xl md:rounded-3xl">
-                  <Users size={28} />
-                </div>
-                <div>
-                  <h3 className="text-2xl md:text-4xl font-black uppercase tracking-tighter leading-none italic text-black">
-                    কর্মী ও টিম ডিরেক্টরি
-                  </h3>
-                  <p className="text-[10px] md:text-[11px] text-slate-400 font-black uppercase tracking-[0.4em] mt-2 italic">
-                    TOTAL WORKFORCE
-                  </p>
-                </div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="md:col-span-3 space-y-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12 px-6">
+            <div className="flex items-center gap-6">
+              <button
+                onClick={() => setActivePanel("Overview")}
+                className="w-12 h-12 flex items-center justify-center bg-white border border-slate-200 rounded-xl hover:bg-black hover:text-white transition-all shadow-sm"
+              >
+                <ArrowLeft size={20} />
+              </button>
+              <div>
+                <h1 className="section-header">
+                   Strategic <span className="text-slate-400">Hub</span>
+                </h1>
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em] mt-2 italic">
+                   System Control Node v2.1
+                </p>
               </div>
-              <button
-                onClick={() => {
-                  setWorkerDocModal("add");
-                  setNewWorkerDept("sewing");
-                }}
-                className="w-14 h-14 md:w-20 md:h-20 bg-black text-white rounded-[1.5rem] md:rounded-[2.5rem] flex items-center justify-center hover:scale-110 transition-all shadow-2xl border-b-[8px] md:border-b-[12px] border-zinc-900"
-              >
-                <Plus size={32} strokeWidth={3} />
-              </button>
-            </div>
-
-            {[
-              "sewing",
-              "stone",
-              "pata",
-              "cutting",
-              "finishing",
-              "logistics",
-              "monthly",
-            ].map((dept) => {
-              const departmentWorkers = getUnifiedWorkers(dept);
-              if (departmentWorkers.length === 0) return null;
-
-              return (
-                <div
-                  key={dept}
-                  className="bg-white rounded-[4rem] border-4 border-slate-50 shadow-2xl overflow-hidden italic text-black animate-fade-up"
-                >
-                  <div className="p-8 border-b-2 border-slate-50 flex justify-between items-center bg-slate-50">
-                    <h3 className="text-2xl font-black uppercase tracking-tighter italic flex items-center gap-4">
-                      <div className="w-3 h-3 rounded-full bg-black"></div>
-                      {dept === "monthly"
-                        ? "OFFICE STAFF"
-                        : dept === "logistics"
-                          ? "OUTSIDE / LOGISTICS"
-                          : `${dept.toUpperCase()} DEPT`}
-                    </h3>
-                    <span className="px-4 py-2 bg-white rounded-full text-[10px] font-black uppercase tracking-widest">
-                      {departmentWorkers.length} Members
-                    </span>
-                  </div>
-                  <div className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {departmentWorkers.map((doc) => (
-                      <div
-                        key={doc.id}
-                        className="bg-white rounded-[3rem] border-4 border-slate-50 shadow-xl overflow-hidden group hover:border-black transition-all"
-                      >
-                        <div className="bg-black px-6 py-4 flex justify-between items-start">
-                          <div className="flex items-center gap-3">
-                            {doc.photo ? (
-                              <img
-                                src={doc.photo}
-                                alt={doc.name}
-                                className="w-12 h-12 rounded-[1.2rem] object-cover border-2 border-white/20"
-                              />
-                            ) : (
-                              <div className="w-12 h-12 rounded-[1.2rem] bg-white/10 flex items-center justify-center text-white font-black text-xl">
-                                {doc.name?.[0]}
-                              </div>
-                            )}
-                            <div>
-                              <p className="text-[9px] text-white/40 font-black uppercase tracking-widest">
-                                {doc.dept || dept}
-                              </p>
-                              <h4 className="text-lg font-black italic uppercase tracking-tighter leading-none text-white">
-                                {doc.name}
-                              </h4>
-                            </div>
-                          </div>
-                          <div className="flex flex-col gap-1 items-end">
-                            <div className="flex gap-1.5">
-                              {!doc.isLegacy && (
-                                <button
-                                  onClick={() => setPrintWorkerDoc(doc)}
-                                  className="p-2 bg-white/10 text-white rounded-xl hover:bg-white hover:text-black transition-all"
-                                  title="Print ID Card"
-                                >
-                                  <Printer size={13} />
-                                </button>
-                              )}
-                              <button
-                                onClick={() => {
-                                  setWorkerDocModal(doc);
-                                  setTempWorkerPhoto(doc.photo || null);
-                                  setTempNidPhoto(doc.nidPhoto || null);
-                                }}
-                                className="p-2 bg-white/10 text-white rounded-xl hover:bg-white hover:text-black transition-all"
-                                title="Edit Profile & Wage"
-                              >
-                                <Edit2 size={13} />
-                              </button>
-                              <button
-                                onClick={() =>
-                                  handleDeleteUnifiedWorker(
-                                    doc.id,
-                                    doc.name,
-                                    dept,
-                                  )
-                                }
-                                className="p-2 bg-white/10 text-white rounded-xl hover:bg-rose-500 transition-all"
-                                title="Delete"
-                              >
-                                <Trash2 size={13} />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="p-5 space-y-3">
-                          {/* Wage Display */}
-                          <div className="flex items-center justify-between bg-slate-50 rounded-2xl p-3 border border-slate-100 mb-4">
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">
-                              {dept === "monthly"
-                                ? "MONTHLY SALARY"
-                                : "SPECIFIC RATE"}
-                            </p>
-                            <p className="font-black text-sm text-black italic">
-                              {doc.wage > 0
-                                ? `৳${doc.wage}`
-                                : "FOLLOWS STYLE RATE"}
-                            </p>
-                          </div>
-
-                          {doc.isLegacy ? (
-                            <div className="py-2 text-center border-t border-slate-50">
-                              <p className="text-[10px] font-black uppercase tracking-widest text-amber-500 mb-2">
-                                LIMITED PROFILE
-                              </p>
-                              <button
-                                onClick={() => {
-                                  setWorkerDocModal(doc);
-                                }}
-                                className="px-4 py-2 bg-black text-white rounded-full text-[9px] font-black uppercase tracking-widest w-full"
-                              >
-                                Upgrade Profile Details
-                              </button>
-                            </div>
-                          ) : (
-                            <>
-                              <div className="flex items-center gap-3">
-                                <Phone
-                                  size={13}
-                                  className="text-slate-400 flex-shrink-0"
-                                />
-                                <p className="font-black text-base text-black">
-                                  {doc.phone || "—"}
-                                </p>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <CreditCard
-                                  size={13}
-                                  className="text-slate-400 flex-shrink-0"
-                                />
-                                <p className="font-black text-sm text-black tracking-widest">
-                                  {doc.nid || "—"}
-                                </p>
-                              </div>
-                              {doc.emergency && (
-                                <div className="bg-rose-50 border border-rose-100 rounded-2xl p-3">
-                                  <p className="text-[9px] font-black text-rose-400 uppercase mb-0.5">
-                                    জরুরি যোগাযোগ
-                                  </p>
-                                  <p className="font-black text-sm text-rose-700">
-                                    {doc.emergency}
-                                  </p>
-                                </div>
-                              )}
-                              {doc.phone && (
-                                <div className="pt-2 border-t border-slate-50">
-                                  <div className="flex flex-wrap gap-2">
-                                    <button
-                                      onClick={() =>
-                                        sendWhatsApp(
-                                          doc.phone,
-                                          `আসসালামু আলাইকুম, ${doc.name} ভাই/বোন। আজ আপনার উপস্থিতি রেকর্ড নেই। অনুগ্রহ করে যোগাযোগ করুন। -NRZO0NE Women's Clothing`,
-                                        )
-                                      }
-                                      className="px-3 py-1.5 bg-slate-50 text-slate-500 rounded-full text-[9px] font-black uppercase hover:bg-amber-500 hover:text-white transition-all flex items-center gap-1"
-                                    >
-                                      <Bell size={10} /> অনুপস্থিত
-                                    </button>
-                                    <button
-                                      onClick={() =>
-                                        sendWhatsApp(
-                                          doc.phone,
-                                          `আসসালামু আলাইকুম, ${doc.name} ভাই/বোন। আপনার পাওনা হনোরার বিষয়ে যোগাযোগ করুন। বাকি বেতন গ্রহণ করুন। -NRZO0NE Women's Clothing`,
-                                        )
-                                      }
-                                      className="px-3 py-1.5 bg-slate-50 text-slate-500 rounded-full text-[9px] font-black uppercase hover:bg-emerald-500 hover:text-white transition-all flex items-center gap-1"
-                                    >
-                                      <DollarSign size={10} /> পাওনা
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {activeTab === "designs" && (
-          <div className="bg-white rounded-[5rem] border-4 border-slate-50 shadow-2xl overflow-hidden italic text-black">
-            <div className="p-12 border-b-2 border-slate-50 flex justify-between items-center">
-              <h3 className="text-3xl font-black uppercase tracking-tighter italic">
-                STYLE REPOSITORY
-              </h3>
-              <button
-                onClick={() => setShowAddModal("design")}
-                className="p-10 bg-black text-white rounded-[2.5rem] shadow-2xl border-b-[12px] border-zinc-800 font-black text-sm uppercase tracking-widest"
-              >
-                ADD NEW STYLE
-              </button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead className="bg-slate-50 text-slate-400 uppercase font-black text-[10px] tracking-widest">
-                  <tr>
-                    <th className="px-12 py-8">PREVIEW</th>
-                    <th className="px-6 py-8">IDENTITY</th>
-                    <th className="px-6 py-8 text-center">SEWING ৳</th>
-                    <th className="px-6 py-8 text-center">HIJAB ৳</th>
-                    <th className="px-6 py-8 text-center">STONE ৳</th>
-                    <th className="px-6 py-8 text-center">PATA ৳</th>
-                    <th className="px-6 py-8 text-center">SELL ৳</th>
-                    <th className="px-12 py-8 text-right">ACTION</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {(masterData.designs || []).map((design, idx) => (
-                    <tr
-                      key={idx}
-                      className="hover:bg-slate-50 transition-all group"
-                    >
-                      <td className="px-12 py-6">
-                        <div className="w-28 h-28 bg-slate-100 rounded-[2rem] overflow-hidden border-2 border-slate-200 p-2 group-hover:scale-110 transition-transform">
-                          {design.image ? (
-                            <img
-                              src={design.image}
-                              alt={design.name}
-                              className="w-full h-full object-contain"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-slate-500">
-                              <ImageIcon size={32} />
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-6">
-                        <p className="font-black text-2xl uppercase tracking-tighter italic">
-                          {design.name}
-                        </p>
-                      </td>
-                      <td className="px-6 py-10 text-center font-black text-xl italic">
-                        ৳{design.sewingRate}
-                      </td>
-                      <td className="px-6 py-10 text-center font-black text-xl italic">
-                        ৳{design.hijabRate}
-                      </td>
-                      <td className="px-6 py-10 text-center font-black text-xl italic">
-                        ৳{design.stoneRate}
-                      </td>
-                      <td className="px-6 py-10 text-center font-black text-xl italic">
-                        ৳{design.pataRate || 0}
-                      </td>
-                      <td className="px-6 py-10 text-center font-black text-xl italic text-emerald-500">
-                        ৳{design.sellingPrice}
-                      </td>
-                      <td className="px-12 py-10 text-right">
-                        <div className="flex gap-2 justify-end">
-                          <button
-                            onClick={() => {
-                              setEditDesignModal({ ...design, index: idx });
-                              setTempImgUrl(design.image);
-                            }}
-                            className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 hover:text-black transition-all"
-                          >
-                            <Edit2 size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteDesign(idx)}
-                            className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 hover:text-rose-500 transition-all"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
           </div>
-        )}
 
-        {activeTab === "profile" && (
-          <div className="bg-white rounded-[5rem] border-4 border-slate-50 shadow-2xl overflow-hidden italic text-black">
-            <div className="p-12 border-b-2 border-slate-50 flex justify-between items-center">
-              <h3 className="text-3xl font-black uppercase tracking-tighter italic">
-                Personal Security
-              </h3>
-            </div>
-            <div className="p-12 max-w-2xl mx-auto space-y-10">
-              <div className="bg-slate-50 p-10 rounded-[4rem] border-2 border-slate-100 flex items-center gap-8">
-                <div className="w-20 h-20 bg-black text-white rounded-[2rem] flex items-center justify-center font-black text-4xl italic shadow-xl">
-                  {currentUser?.id?.[0]}
+          <div className="space-y-4">
+            <AccordionItem id="users" label="System Access" icon={ShieldCheck} description="Manage administrative credentials and roles">
+              {renderUsersContent()}
+            </AccordionItem>
+
+            <AccordionItem id="personnel" label="Personnel Matrix" icon={Users} description="Consolidated staff and production operative directory">
+              {renderPersonnelContent()}
+            </AccordionItem>
+
+            <AccordionItem id="product" label="Production Matrix" icon={LayoutGrid} description="Master taxonomy for sizes, colors, and design specs">
+              {renderProductContent()}
+            </AccordionItem>
+            
+            <AccordionItem id="logs" label="Audit Archives" icon={Clock} description="Real-time chronological footprint of all system operations">
+               {renderAuditContent()}
+            </AccordionItem>
+
+            <AccordionItem id="database" label="Strategic Maintenance" icon={Database} description="Legacy backup restoration and node sanitation">
+               {renderDatabaseContent()}
+            </AccordionItem>
+          </div>
+        </div>
+
+        <div className="hidden md:block space-y-8">
+          <div className="bg-white dark:bg-zinc-900 p-8 rounded-[3.5rem] border-2 border-slate-50 dark:border-zinc-800 shadow-2xl relative overflow-hidden italic">
+            <div className="relative z-10">
+              <h3 className="text-2xl font-black uppercase mb-8 italic tracking-tighter">Diagnostic Node</h3>
+              <div className="space-y-8">
+                <div>
+                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Node Sync Status</p>
+                   <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                      <p className="text-xs font-black uppercase italic">Primary Cloud Online</p>
+                   </div>
                 </div>
                 <div>
-                  <h4 className="text-3xl font-black uppercase tracking-tighter italic leading-none">
-                    {currentUser?.name}
-                  </h4>
-                  <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-2">
-                    ID: {currentUser?.id} • ROLE: {currentUser?.role}
-                  </p>
+                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Database Latency</p>
+                   <p className="text-4xl font-black italic tracking-tighter">14<span className="text-xs ml-1 opacity-40">ms</span></p>
+                </div>
+                <div className="pt-6 border-t border-slate-50 dark:border-zinc-800">
+                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">System Capacity</p>
+                   <div className="w-full h-1 bg-slate-50 dark:bg-black/50 rounded-full overflow-hidden">
+                      <div className="w-[84%] h-full bg-black dark:bg-white"></div>
+                   </div>
+                   <p className="text-[10px] font-black uppercase mt-3 italic text-right opacity-30">8.4GB / 10GB Allocated</p>
                 </div>
               </div>
+            </div>
+            <div className="absolute bottom-0 right-0 p-8 opacity-[0.03] rotate-12 scale-150"><Settings size={140} /></div>
+          </div>
 
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const newPass = e.target.newPass.value;
-                  const confirmPass = e.target.confirmPass.value;
-                  if (newPass !== confirmPass)
-                    return alert("Passwords do not match");
-
-                  const userIdx = masterData.users.findIndex(
-                    (u) => u.id === currentUser.id,
-                  );
-                  handleUpdateUser(userIdx, { password: newPass });
-                  e.target.reset();
-                }}
-                className="space-y-8"
-              >
-                <div className="space-y-3">
-                  <label className="bg-black text-white px-3 py-1 rounded-sm text-[10px] font-black uppercase italic tracking-widest inline-block mb-2 shadow-lg ml-5">
-                    NEW PASSWORD
-                  </label>
-                  <div className="relative">
-                    <input
-                      name="newPass"
-                      type={showProfilePass ? "text" : "password"}
-                      className="form-input text-lg tracking-[0.4em] py-5 bg-slate-50 border-slate-100 focus:border-black text-black pr-16"
-                      placeholder="••••••"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowProfilePass(!showProfilePass)}
-                      className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 hover:text-black transition-colors"
-                    >
-                      {showProfilePass ? (
-                        <EyeOff size={20} />
-                      ) : (
-                        <Eye size={20} />
-                      )}
-                    </button>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <label className="bg-black text-white px-3 py-1 rounded-sm text-[10px] font-black uppercase italic tracking-widest inline-block mb-2 shadow-lg ml-5">
-                    CONFIRM PASSWORD
-                  </label>
-                  <div className="relative">
-                    <input
-                      name="confirmPass"
-                      type={showProfilePass ? "text" : "password"}
-                      className="form-input text-lg tracking-[0.4em] py-5 bg-slate-50 border-slate-100 focus:border-black text-black pr-16"
-                      placeholder="••••••"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowProfilePass(!showProfilePass)}
-                      className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 hover:text-black transition-colors"
-                    >
-                      {showProfilePass ? (
-                        <EyeOff size={20} />
-                      ) : (
-                        <Eye size={20} />
-                      )}
-                    </button>
-                  </div>
-                </div>
-                <button
-                  type="submit"
-                  className="w-full bg-black text-white py-6 rounded-[2rem] font-black uppercase text-[10px] tracking-[0.4em] shadow-xl border-b-8 border-zinc-900 transition-all hover:translate-y-[-4px]"
-                >
-                  Update Security Settings
+          <div className="bg-black text-white p-10 rounded-[3.5rem] shadow-3xl text-center italic group overflow-hidden relative border-8 border-white/5">
+             <div className="relative z-10">
+                <p className="text-[9px] font-black tracking-[0.5em] mb-4 uppercase opacity-40">Administrative</p>
+                <h4 className="text-2xl font-black uppercase italic mb-8 tracking-tighter italic">Self-Correction Node</h4>
+                <button onClick={() => window.location.reload()} className="w-full bg-white text-black py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:scale-105 transition-all shadow-xl italic">
+                   Soft Reboot
                 </button>
-              </form>
-            </div>
+             </div>
+             <div className="absolute inset-0 bg-gradient-to-br from-zinc-800/10 to-transparent"></div>
           </div>
-        )}
-
-        {activeTab === "users" && (
-          <div className="bg-white rounded-[5rem] border-4 border-slate-50 shadow-2xl overflow-hidden italic text-black">
-            <div className="p-12 border-b-2 border-slate-50 flex justify-between items-center">
-              <h3 className="text-3xl font-black uppercase tracking-tighter italic">
-                User Directory
-              </h3>
-              <button
-                onClick={() => setShowAddModal("user")}
-                className="p-6 bg-black text-white rounded-3xl shadow-xl hover:rotate-12 transition-transform"
-              >
-                <Plus size={24} />
-              </button>
-            </div>
-            <div className="p-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {masterData.users?.map((u, idx) => {
-                const isEditing = editingItem === `user-${idx}`;
-                return (
-                  <div
-                    key={idx}
-                    className="bg-slate-50 p-10 rounded-[4rem] border-2 border-slate-100 italic relative group shadow-inner min-h-[300px] flex flex-col justify-between"
-                  >
-                    {isEditing ? (
-                      <div className="space-y-4">
-                        <input
-                          id={`edit-user-id-${idx}`}
-                          className="form-input py-4 text-xs font-black bg-white uppercase"
-                          defaultValue={u.id}
-                          placeholder="USER ID"
-                        />
-                        <input
-                          id={`edit-user-name-${idx}`}
-                          className="form-input py-4 text-xs font-black bg-white"
-                          defaultValue={u.name}
-                          placeholder="NAME"
-                        />
-                        <div className="relative">
-                          <input
-                            id={`edit-user-pass-${idx}`}
-                            type={showUserPass ? "text" : "password"}
-                            className="form-input py-4 text-xs font-black bg-white tracking-widest pr-10"
-                            defaultValue={u.password}
-                            placeholder="PASSWORD"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowUserPass(!showUserPass)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
-                          >
-                            {showUserPass ? (
-                              <EyeOff size={14} />
-                            ) : (
-                              <Eye size={14} />
-                            )}
-                          </button>
-                        </div>
-                        <select
-                          id={`edit-user-role-${idx}`}
-                          className="form-input py-4 text-xs font-black bg-white"
-                          defaultValue={u.role}
-                        >
-                          <option value="worker">WORKER</option>
-                          <option value="manager">MANAGER</option>
-                          <option value="admin">ADMIN</option>
-                        </select>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => setEditingItem(null)}
-                            className="flex-1 bg-white text-slate-400 py-3 rounded-2xl font-black text-[10px] uppercase"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleUpdateUser(idx, {
-                                id: document
-                                  .getElementById(`edit-user-id-${idx}`)
-                                  .value.toUpperCase(),
-                                name: document.getElementById(
-                                  `edit-user-name-${idx}`,
-                                ).value,
-                                password: document.getElementById(
-                                  `edit-user-pass-${idx}`,
-                                ).value,
-                                role: document.getElementById(
-                                  `edit-user-role-${idx}`,
-                                ).value,
-                              })
-                            }
-                            className="flex-[2] bg-black text-white py-3 rounded-2xl font-black text-[10px] uppercase"
-                          >
-                            Save Changes
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex justify-between items-start mb-3">
-                          <span
-                            className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${u.role === "admin" ? "bg-black text-white" : "bg-white text-slate-400"}`}
-                          >
-                            {u.role}
-                          </span>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => setEditingItem(`user-${idx}`)}
-                              className="opacity-0 group-hover:opacity-100 p-2 text-slate-500 hover:text-black transition-all"
-                            >
-                              <Edit2 size={16} />
-                            </button>
-                            {u.id !== "NRZO0NE" && (
-                              <button
-                                onClick={() => handleDeleteUser(u.id)}
-                                className="opacity-0 group-hover:opacity-100 p-2 text-rose-300 hover:text-rose-500 transition-all"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        <div className="mt-4">
-                          <h4 className="text-3xl font-black uppercase tracking-tighter italic leading-none">
-                            {u.name}
-                          </h4>
-                          <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-2">
-                            {u.id}
-                          </p>
-                        </div>
-                        <div className="mt-8 pt-6 border-t border-slate-200/50 flex justify-between items-center">
-                          <div className="space-y-1">
-                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">
-                              ACCESS KEY
-                            </p>
-                            <p className="font-black tracking-[0.3em] text-slate-400">
-                              ••••••
-                            </p>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {activeTab === "colors" && (
-          <ListSection
-            category="colors"
-            title="COLOR PALETTE"
-            items={masterData.colors}
-            icon={<LayoutGrid />}
-          />
-        )}
-        {activeTab === "sizes" && (
-          <ListSection
-            category="sizes"
-            title="SIZE REPOSITORY"
-            items={masterData.sizes}
-            icon={<LayoutGrid />}
-          />
-        )}
-        {activeTab === "cutters" && (
-          <ListSection
-            category="cutters"
-            title="MASTER REPOSITORY"
-            items={masterData.cutters}
-            icon={<Scissors />}
-          />
-        )}
-
-        {activeTab === "pata" && (
-          <div className="space-y-12">
-            <div className="bg-white rounded-[5rem] border-4 border-slate-50 shadow-2xl overflow-hidden italic text-black">
-              <div className="p-12 border-b-2 border-slate-50 flex items-center justify-between">
-                <h3 className="text-3xl font-black uppercase tracking-tighter italic">
-                  Pata Rate Matrix
-                </h3>
-                <p className="text-[10px] text-slate-400 uppercase tracking-widest italic">
-                  PRICING ARCHIVE
-                </p>
-              </div>
-              <div className="p-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                {masterData.pataTypes?.map((type) => (
-                  <div
-                    key={type}
-                    className="bg-slate-50 p-10 rounded-[3.5rem] flex flex-col justify-between shadow-inner h-64"
-                  >
-                    <p className="font-black text-2xl uppercase tracking-tighter mb-8 italic">
-                      {type}
-                    </p>
-                    <div className="flex items-end gap-5 pt-8 border-t-2 border-slate-100">
-                      <div className="flex-1">
-                        <p className="text-[10px] opacity-20 font-black italic uppercase mb-2">
-                          YIELD RATE
-                        </p>
-                        <input
-                          type="number"
-                          defaultValue={masterData.pataRates?.[type] || 0}
-                          className="bg-transparent text-5xl font-black text-black text-left w-full outline-none italic leading-none"
-                          onBlur={(e) => {
-                            setMasterData((prev) => ({
-                              ...prev,
-                              pataRates: {
-                                ...prev.pataRates,
-                                [type]: Number(e.target.value) || 0,
-                              },
-                            }));
-                          }}
-                        />
-                      </div>
-                      <div className="text-3xl font-black opacity-10 italic">
-                        ৳
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <ListSection
-              category="pataTypes"
-              title="Pata Taxonomy"
-              items={masterData.pataTypes}
-              icon={<LayoutGrid />}
-            />
-          </div>
-        )}
-
-        {activeTab === "database" && (
-          <div className="space-y-12">
-            {/* Pro Backup Section */}
-            <div className="bg-black text-white rounded-[5rem] p-12 sm:p-20 shadow-3xl text-center italic relative overflow-hidden group border-[10px] border-white/5">
-              <div className="relative z-10">
-                <h3 className="text-4xl sm:text-6xl font-black uppercase tracking-tighter mb-6">
-                  Pro Secure Backup
-                </h3>
-                <p className="text-slate-400 text-sm sm:text-lg mb-12 uppercase tracking-widest max-w-2xl mx-auto">
-                  ডাটাবেজ নিরাপদ রাখতে ব্যাকআপ ফাইল ডাউনলোড করে রাখুন। ফোন
-                  হারিয়ে গেলে বা ডাটা মুছে গেলে এটি দিয়ে ১ সেকেন্ডে সব ফেরত আনা
-                  যাবে।
-                </p>
-
-                <div className="flex flex-col sm:flex-row justify-center gap-6">
-                  <button
-                    onClick={handleBackup}
-                    className="bg-white text-black px-12 py-8 rounded-full font-black uppercase text-xs tracking-[0.4em] hover:scale-105 transition-all shadow-xl flex items-center justify-center gap-4"
-                  >
-                    <Download size={20} /> Download Backup
-                  </button>
-
-                  <label className="bg-indigo-600 text-white px-12 py-8 rounded-full font-black uppercase text-xs tracking-[0.4em] hover:scale-105 transition-all shadow-xl flex items-center justify-center gap-4 cursor-pointer">
-                    <Upload size={20} /> Restore From File
-                    <input
-                      type="file"
-                      accept=".json"
-                      onChange={handleRestore}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-[5rem] border-4 border-slate-50 shadow-2xl overflow-hidden italic text-black">
-              <div className="p-12 border-b-2 border-slate-50 flex items-center justify-between">
-                <h3 className="text-3xl font-black uppercase tracking-tighter italic">
-                  Database Maintenance
-                </h3>
-                <div className="flex items-center gap-4">
-                  <span className="px-4 py-2 bg-rose-500 text-white text-[10px] font-black rounded-full animate-pulse uppercase tracking-[0.2em]">
-                    Danger Zone
-                  </span>
-                </div>
-              </div>
-              <div className="p-12 grid grid-cols-1 md:grid-cols-2 gap-10">
-                {[
-                  {
-                    label: "Production Logs",
-                    key: "productions",
-                    desc: "Factory work entries",
-                  },
-                  {
-                    label: "Cutting Queue",
-                    key: "cuttingStock",
-                    desc: "Raw stock inputs",
-                  },
-                  {
-                    label: "Pata Hub Logs",
-                    key: "pataEntries",
-                    desc: "Pata unit entries",
-                  },
-                  {
-                    label: "Inventory Data",
-                    key: "rawInventory",
-                    desc: "Fabric movement logs",
-                  },
-                  {
-                    label: "Delivery Data",
-                    key: "deliveries",
-                    desc: "Finished goods history",
-                  },
-                  {
-                    label: "Staff Attendance",
-                    key: "attendance",
-                    desc: "Daily attendance records",
-                  },
-                ].map((dbItem) => (
-                  <div
-                    key={dbItem.key}
-                    className="bg-slate-50 p-10 rounded-[4rem] border-2 border-slate-100 flex flex-col justify-between group hover:border-rose-500 transition-all shadow-inner min-h-[200px]"
-                  >
-                    <div>
-                      <h4 className="text-2xl font-black uppercase tracking-tighter italic leading-none group-hover:text-rose-600 transition-colors">
-                        {dbItem.label}
-                      </h4>
-                      <p className="text-[11px] text-slate-400 font-black uppercase tracking-widest mt-4 italic">
-                        {dbItem.desc}
-                      </p>
-                    </div>
-                    <div className="flex justify-between items-center mt-8">
-                      <p className="text-2xl font-black italic">
-                        {masterData[dbItem.key]?.length || 0}{" "}
-                        <span className="text-[8px] text-slate-500">ITEMS</span>
-                      </p>
-                      <button
-                        onClick={() => {
-                          if (confirm(`Wipe all ${dbItem.label}?`)) {
-                            setMasterData((prev) => ({
-                              ...prev,
-                              [dbItem.key]: [],
-                            }));
-                            showNotify("Cleared successfully");
-                          }
-                        }}
-                        className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-rose-500 shadow-md hover:bg-rose-500 hover:text-white transition-all"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+        </div>
       </div>
 
       {showAddModal === "user" && (

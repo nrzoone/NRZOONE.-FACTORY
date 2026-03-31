@@ -4,10 +4,38 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="mobile-web-app-capable" content="yes">
     <link rel="apple-touch-icon" href="/icon-192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NRZO0NE - Factory Management System</title>
+    <!-- On-screen error reporter to debug white screen -->
+    <script>
+      // Global Error Tracking to catch startup crashes
+      window.addEventListener('error', function(e) {
+        // Ignore benign errors and AbortErrors
+        const msg = e.message || '';
+        if (
+          msg.includes('ResizeObserver') || 
+          msg.includes('Script error') ||
+          /abort|cancelled|user aborted/i.test(msg)
+        ) return;
+        
+        console.error("FATAL ERROR CAUGHT:", e);
+      });
+
+      window.addEventListener('unhandledrejection', function(event) {
+        const reason = event.reason;
+        const reasonStr = reason ? (reason.message || reason.toString() || String(reason)) : 'Unknown reason';
+        
+        // IMPORTANT: Ignore AbortErrors rigorously
+        if (/abort|cancelled|user aborted|timeout|fetching/i.test(reasonStr)) {
+          return;
+        }
+
+        // Only show fatal errors that stop the app
+        console.error('Promise Rejection:', reasonStr);
+      });
+    </script>
     <!-- Meta Pixel Code -->
     <script>
       !(function (f, b, e, v, n, t, s) {
@@ -41,5 +69,16 @@
     </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then(reg => {
+            console.log('SW registered:', reg);
+          }).catch(err => {
+            console.log('SW failed:', err);
+          });
+        });
+      }
+    </script>
   </body>
 </html>

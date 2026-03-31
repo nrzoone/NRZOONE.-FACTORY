@@ -195,18 +195,18 @@ export const getStats = (masterData, type) => {
         return a + netBorka + netHijab;
     }, 0);
 
-    // Production (Piece rate) bill
     const productionBill = items.filter(i => i.status === 'Received').reduce((acc, b) => {
         const design = masterData.designs.find(d => d.name === b.design);
         const netBorka = (b.receivedBorka || 0);
         const netHijab = (b.receivedHijab || 0);
+        const multiplier = masterData.multipliers?.[type] || 1.0;
 
         if (type === 'sewing') {
-            const bRate = design?.sewingRate || 0;
-            const hRate = design?.hijabRate || bRate;
+            const bRate = (design?.sewingRate || 0) * multiplier;
+            const hRate = (design?.hijabRate || design?.sewingRate || 0) * multiplier;
             return acc + (netBorka * bRate) + (netHijab * hRate);
         } else if (type === 'stone') {
-            const rate = design?.stoneRate || 0;
+            const rate = (design?.stoneRate || 0) * multiplier;
             return acc + ((netBorka + netHijab) * rate);
         } else {
             return acc;
@@ -233,7 +233,8 @@ export const getPataStats = (masterData) => {
     }, 0) || 0);
 
     // Total Bill for Pata workers
-    const pataProductionBill = receivedEntries.reduce((acc, e) => acc + Number(e.amount || 0), 0);
+    const multiplier = masterData.multipliers?.pata || 1.0;
+    const pataProductionBill = receivedEntries.reduce((acc, e) => acc + (Number(e.amount || 0) * multiplier), 0);
 
     // Monthly worker attendance bill for pata department
     const attendanceBill = masterData.attendance?.filter(a => a.department === 'pata')

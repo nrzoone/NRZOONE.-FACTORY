@@ -71,6 +71,8 @@ export const MenuButton = ({ title, sub, onClick, icon, color }) => {
 
 export const Toast = ({ message, type, onClose }) => {
     React.useEffect(() => {
+        const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3");
+        audio.play().catch(() => {});
         if (onClose) {
             const timer = setTimeout(onClose, 3000);
             return () => clearTimeout(timer);

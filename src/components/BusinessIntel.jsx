@@ -35,9 +35,37 @@ const BusinessIntel = ({ masterData }) => {
         const totalWork = (masterData.productions || []).length;
         const efficiency = totalWork > 0 ? Math.round(((totalWork - pendingWork) / totalWork) * 100) : 0;
 
+        // 6. Advanced Worker Rankings (Efficiency Hub)
+        const workerStats = {};
+        [...(masterData.productions || []), ...(masterData.pataEntries || [])].forEach(p => {
+            if (!workerStats[p.worker]) workerStats[p.worker] = { name: p.worker, total: 0, pending: 0, received: 0 };
+            const qty = p.issueBorka || p.pataQty || 0;
+            workerStats[p.worker].total += qty;
+            if (p.status === 'Pending') workerStats[p.worker].pending += qty;
+            else workerStats[p.worker].received += (p.receivedBorka || p.receivedQty || qty);
+        });
+        const topWorkers = Object.values(workerStats)
+            .sort((a, b) => b.received - a.received)
+            .slice(0, 10);
+
+        // 7. Depletion Trend (AI Prediction Logic)
+        const depletionTrends = Object.values(rawStock).map(item => {
+            const usageLogs = stockLogs.filter(l => l.item === item.name && l.color === item.color && l.type === 'out');
+            if (usageLogs.length < 2) return { ...item, daysLeft: 'INF' };
+            
+            const totalUsed = usageLogs.reduce((s, l) => s + Number(l.qty), 0);
+            const firstDate = new Date(usageLogs[usageLogs.length - 1].date.split('/').reverse().join('-'));
+            const lastDate = new Date(usageLogs[0].date.split('/').reverse().join('-'));
+            const daysDiff = Math.max(1, Math.ceil((lastDate - firstDate) / (1000 * 60 * 60 * 24)));
+            
+            const dailyBurn = totalUsed / daysDiff;
+            const daysLeft = dailyBurn > 0 ? Math.floor(item.qty / dailyBurn) : 'INF';
+            return { ...item, daysLeft, dailyBurn: dailyBurn.toFixed(2) };
+        });
+
         const pataSummary = getPataStockSummary(masterData);
 
-        return { totalProduced, totalPata, lowStockItems, topDesigns, efficiency, pendingWork, pataSummary };
+        return { totalProduced, totalPata, lowStockItems, topDesigns, efficiency, pendingWork, pataSummary, topWorkers, depletionTrends };
     }, [masterData]);
 
     return (
@@ -151,30 +179,55 @@ const BusinessIntel = ({ masterData }) => {
                     <div className="bg-white rounded-[4rem] border-4 border-slate-50 shadow-2xl p-12 h-full">
                         <div className="flex justify-between items-center mb-10">
                             <h4 className="text-2xl font-black uppercase italic tracking-tighter flex items-center gap-4 text-black">
-                                <AlertTriangle className="text-rose-500" /> Stock Alert Center
+                                <TrendingUp className="text-emerald-500" /> Depletion Trend Intel
                             </h4>
-                            <span className="px-6 py-2 bg-rose-50 text-rose-500 rounded-full text-[10px] font-black uppercase tracking-widest">{stats.lowStockItems.length} Warnings</span>
+                            <span className="px-6 py-2 bg-slate-50 text-slate-400 rounded-full text-[10px] font-black uppercase tracking-widest">Predictive Monitoring</span>
                         </div>
                         <div className="grid grid-cols-1 gap-4 overflow-y-auto max-h-[400px] pr-2 custom-scrollbar">
-                            {stats.lowStockItems.map((item, idx) => (
-                                <div key={idx} className="flex items-center justify-between p-6 border-2 border-rose-50 rounded-3xl bg-rose-50/20 italic">
-                                    <div>
+                            {stats.depletionTrends.sort((a,b) => (a.daysLeft === 'INF' ? 999 : a.daysLeft) - (b.daysLeft === 'INF' ? 999 : b.daysLeft)).map((item, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-6 border-2 border-slate-50 rounded-3xl bg-slate-50/50 italic group hover:border-black transition-all">
+                                    <div className="flex-1">
                                         <p className="text-xl font-black text-black uppercase">{item.name}</p>
-                                        <p className="text-[10px] font-black text-rose-300 uppercase mt-1">{item.color || 'Standard Material'}</p>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase mt-1">Avg Cons: {item.dailyBurn} / day</p>
                                     </div>
-                                    <div className="flex items-baseline gap-2">
-                                        <span className="text-4xl font-black text-rose-600 italic tracking-tighter">{item.qty}</span>
-                                        <span className="text-[10px] font-black text-rose-400 uppercase">Left</span>
+                                    <div className="text-right">
+                                        <p className="text-[9px] font-black uppercase text-slate-300">EST. DEPLETION</p>
+                                        <p className={`text-4xl font-black italic tracking-tighter leading-none ${item.daysLeft < 3 ? 'text-rose-500' : item.daysLeft < 7 ? 'text-amber-500' : 'text-emerald-500'}`}>
+                                            {item.daysLeft === 'INF' ? '∞' : `${item.daysLeft}d`}
+                                        </p>
                                     </div>
                                 </div>
                             ))}
-                            {stats.lowStockItems.length === 0 && (
-                                <div className="py-20 flex flex-col items-center justify-center text-slate-100 gap-6">
-                                    <CheckCircle size={80} strokeWidth={1} />
-                                    <p className="text-[10px] font-black uppercase tracking-[0.6em]">All Stock Levels Healthy</p>
-                                </div>
-                            )}
                         </div>
+                    </div>
+
+                    <div className="bg-black rounded-[4rem] shadow-3xl p-12 h-full text-white relative overflow-hidden group">
+                        <div className="flex justify-between items-center mb-10 relative z-10">
+                            <h4 className="text-2xl font-black uppercase italic tracking-tighter flex items-center gap-4">
+                                <Star className="text-amber-500" fill="currentColor" /> Staff Performance Hub
+                            </h4>
+                            <span className="px-6 py-2 bg-white/10 text-white rounded-full text-[10px] font-black uppercase tracking-widest">Global Top 10</span>
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 overflow-y-auto max-h-[400px] pr-2 custom-scrollbar relative z-10">
+                            {stats.topWorkers.map((w, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-6 border border-white/10 rounded-3xl bg-white/5 italic group/row hover:bg-white hover:text-black transition-all">
+                                    <div className="flex items-center gap-6">
+                                        <div className="w-12 h-12 bg-white/10 text-white rounded-2xl flex items-center justify-center font-black group-hover/row:bg-black group-hover/row:text-white transition-all">
+                                            #{idx + 1}
+                                        </div>
+                                        <div>
+                                            <p className="text-xl font-black uppercase">{w.name}</p>
+                                            <p className="text-[10px] font-black text-white/40 uppercase group-hover/row:text-black/40">Yield: {w.received} Units</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-3xl font-black italic tracking-tighter leading-none">{Math.round((w.received / (w.total || 1)) * 100)}%</p>
+                                        <p className="text-[9px] font-black uppercase opacity-40">Efficiency</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <Activity className="absolute bottom-[-10%] left-[-5%] text-white opacity-[0.03] group-hover:opacity-[0.08] transition-opacity" size={240} />
                     </div>
                 </div>
             </div>

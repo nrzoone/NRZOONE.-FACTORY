@@ -61,6 +61,19 @@ const initialData = {
     expenses: [],
     cashEntries: [],
     workerPayments: [],
+    auditLogs: [], // Feature 4: Audit Trail
+    systemSettings: {
+        offlineMode: true,
+        whatsappEnabled: true,
+        barcodeEnabled: true,
+        currency: "৳"
+    },
+    rolePermissions: { // Feature 7: Role Based Access Control
+        admin: ["*"],
+        manager: ["overview", "productions", "inventory", "attendance", "outside", "reports"],
+        accountant: ["overview", "expenses", "payments", "reports"],
+        worker: ["overview", "productions"]
+    }
 };
 
 
@@ -86,61 +99,119 @@ export const useMasterData = () => {
 
     // First load from Firestore
     useEffect(() => {
-        const unsub = onSnapshot(doc(db, COLLECTION_NAME, DOC_ID), (snap) => {
-            if (snap.exists()) {
-                const cloud = snap.data()?.content;
-                if (!cloud) {
-                    setMasterData(initialData);
-                    setIsLoading(false);
-                    return;
-                }
-
-                setMasterData(prev => {
-                    const updatedCloud = { ...cloud };
-                    if (!updatedCloud.users) updatedCloud.users = initialData.users;
-                    if (!updatedCloud.designs) updatedCloud.designs = initialData.designs;
-                    if (!updatedCloud.workerCategories) updatedCloud.workerCategories = initialData.workerCategories;
-
-                    const cloudStr = JSON.stringify(updatedCloud);
-                    if (JSON.stringify(prev) !== cloudStr) {
-                        return updatedCloud;
-                    }
-                    return prev;
-                });
-                setSyncStatus('synced');
-            } else {
-                setDoc(doc(db, COLLECTION_NAME, DOC_ID), { content: initialData });
-            }
+        if (!db) {
+            console.error("Firestore database is unavailable.");
             setIsLoading(false);
+            setSyncStatus('error');
+            return;
+        }
+
+        let isSubscribed = true;
+        const unsub = onSnapshot(doc(db, COLLECTION_NAME, DOC_ID), (snap) => {
+            if (!isSubscribed) return;
+            try {
+                if (snap.exists()) {
+                    const cloudData = snap.data();
+                    const cloud = cloudData?.content;
+                    if (!cloud) {
+                        setSyncStatus('synced');
+                        setIsLoading(false);
+                        return;
+                    }
+
+                    setMasterData((prev) => {
+                        const cloudStr = JSON.stringify(cloud);
+                        const prevStr = JSON.stringify(prev);
+                        if (cloudStr !== prevStr) {
+                            try {
+                                localStorage.setItem('nrzone_data', cloudStr);
+                            } catch (lsErr) {
+                                console.warn("Local storage update failed (likely quota):", lsErr);
+                            }
+                            return cloud;
+                        }
+                        return prev;
+                    });
+                    setSyncStatus('synced');
+                } else {
+                  // Ensure setDoc is handled to avoid unhandled promise rejection
+                  (async () => {
+                    try {
+                      await setDoc(doc(db, COLLECTION_NAME, DOC_ID), { content: initialData });
+                    } catch (e) {
+                      console.error("Internal initialization failed:", e);
+                    }
+                  })();
+                }
+            } catch (err) {
+                console.error("Data processing error:", err);
+                setSyncStatus('error');
+            } finally {
+                // Ensure loading is always cleared on the first response
+                if (isSubscribed) setIsLoading(false);
+            }
         }, (err) => {
+            if (!isSubscribed) return;
+            
+            // Robust check for various abort error formats across browsers
+            const errStr = String(err.message || err.code || err);
+            if (/abort|cancelled|user aborted/i.test(errStr)) {
+                console.warn("Firestore listener aborted (benign).");
+                return;
+            }
+            
             console.error("Firestore access error:", err);
             setSyncStatus('error');
             setIsLoading(false);
         });
-        return () => unsub();
+
+        return () => {
+            isSubscribed = false;
+            if (unsub) unsub();
+        };
     }, []);
 
-    // Save logic
+    // Save logic - Debounced Cloud Save Only
     useEffect(() => {
-        if (!masterData) return;
+        if (!db || !masterData || isLoading) return;
 
-        // Immediate Local Save
-        localStorage.setItem('nrzone_data', JSON.stringify(masterData));
-
-        // Debounced Cloud Save
         const timer = setTimeout(async () => {
             try {
+                // Check if current state matches what's in local storage to avoid redundant cloudsync
+                const saved = localStorage.getItem('nrzone_data');
+                if (JSON.stringify(masterData) === saved) {
+                    setSyncStatus('synced');
+                    return;
+                }
+
                 setSyncStatus('syncing');
                 await setDoc(doc(db, COLLECTION_NAME, DOC_ID), { content: masterData }, { merge: true });
+                localStorage.setItem('nrzone_data', JSON.stringify(masterData));
                 setSyncStatus('synced');
             } catch (e) {
                 console.error("Cloud Save Failed:", e);
                 setSyncStatus('error');
             }
-        }, 3000); // 3 seconds debounce for cloud
+        }, 5000); // 5 seconds debounce for cloud to reduce hit count
 
         return () => clearTimeout(timer);
-    }, [masterData]);
+    }, [masterData, isLoading]);
 
-    return { masterData, setMasterData, isLoading, syncStatus };
+    const logAction = (user, action, details) => {
+        setMasterData(prev => ({
+            ...prev,
+            auditLogs: [
+                {
+                    timestamp: new Date().toISOString(),
+                    user: user?.name || user?.id || 'System',
+                    role: user?.role || 'Guest',
+                    action,
+                    details
+                },
+                ...(prev.auditLogs || []).slice(0, 999) // Limit to 1000 logs
+            ]
+        }));
+    };
+
+    return { masterData, setMasterData, isLoading, syncStatus, logAction };
 };

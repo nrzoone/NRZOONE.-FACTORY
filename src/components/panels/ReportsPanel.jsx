@@ -8,6 +8,7 @@ import {
   Clock,
   Database,
   ArrowLeft,
+  MessageCircle,
 } from "lucide-react";
 import WorkerSummary from "../WorkerSummary";
 import WeeklyInvoice from "../WeeklyInvoice";
@@ -214,6 +215,53 @@ const ReportsPanel = ({ masterData, user, setActivePanel, t }) => {
                 ? filteredAttendance
                 : filteredExpenses;
 
+    const shareToWhatsApp = () => {
+        const financialIntel = (() => {
+            const revenue = (masterData.deliveries || []).reduce((acc, d) => {
+                const design = masterData.designs.find(ds => ds.name === d.design);
+                const price = Number(design?.sellingPrice || 0);
+                return acc + (Number(d.borka || 0) * price) + (Number(d.hijab || 0) * price);
+            }, 0);
+            const prodCosts = (masterData.productions || []).filter(p => p.status === 'Received').reduce((acc, p) => {
+                const design = masterData.designs.find(ds => ds.name === p.design);
+                const multiplier = masterData.multipliers?.[p.type] || 1.0;
+                let rate = 0;
+                if (p.type === 'sewing') rate = (design?.sewingRate || 0) * multiplier;
+                else if (p.type === 'stone') rate = (design?.stoneRate || 0) * multiplier;
+                return acc + ((Number(p.receivedBorka || 0) + Number(p.receivedHijab || 0)) * rate);
+            }, 0);
+            const matCosts = (masterData.productions || []).reduce((acc, p) => {
+                const design = masterData.designs.find(ds => ds.name === p.design);
+                const cost = Number(design?.materialCost || 0);
+                return acc + ((Number(p.issueBorka || 0) + Number(p.issueHijab || 0)) * cost);
+            }, 0);
+            const misc = (masterData.expenses || []).reduce((acc, e) => acc + Number(e.amount || 0), 0);
+            const totalCosts = prodCosts + matCosts + misc;
+            const netProfit = revenue - totalCosts;
+            return { revenue, totalCosts, netProfit };
+        })();
+
+        let lines = [
+            `*NRZO0NE STRATEGIC SNAPSHOT*`, 
+            `Date: ${new Date().toLocaleDateString('en-GB')}`, 
+            `-----------------------------`,
+            `💰 REVENUE: ৳${financialIntel.revenue.toLocaleString()}`,
+            `📉 TOTAL COSTS: ৳${financialIntel.totalCosts.toLocaleString()}`,
+            `💎 NET PROFIT: ৳${financialIntel.netProfit.toLocaleString()}`,
+            `-----------------------------`,
+            `*Audit Block: ${transactionTab.toUpperCase()}*`,
+            `Entries: ${printData.length}`, 
+            ``
+        ];
+        printData.slice(0, 5).forEach(item => {
+            lines.push(`• ${item.worker || item.description}: ${item.issueBorka || item.amount || item.pataQty || item.status}`);
+        });
+        if (printData.length > 5) lines.push(`...and ${printData.length - 5} more.`);
+        
+        const message = lines.join('\n');
+        window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+    };
+
     return (
       <div className="min-h-screen bg-white p-12 text-black font-serif italic">
         <style>{`
@@ -232,15 +280,20 @@ const ReportsPanel = ({ masterData, user, setActivePanel, t }) => {
           >
             ← Cancel
           </button>
-          <p className="font-black text-[10px] uppercase tracking-widest text-slate-400 italic font-outfit uppercase tracking-[0.5em]">
-            NRZO0NE OFFICIAL REPORT PREVIEW
-          </p>
-          <button
-            onClick={() => window.print()}
-            className="px-10 py-4 bg-black text-white font-black uppercase text-xs rounded-full shadow-2xl border-b-[8px] border-zinc-900 hover:scale-105 transition-all"
-          >
-            Download / Print PDF
-          </button>
+          <div className="flex gap-4">
+            <button 
+                onClick={shareToWhatsApp}
+                className="px-6 py-4 bg-emerald-500 text-white font-black uppercase text-xs rounded-full shadow-lg hover:scale-105 transition-all flex items-center gap-2"
+            >
+                <MessageCircle size={16} /> Share to WhatsApp
+            </button>
+            <button
+                onClick={() => window.print()}
+                className="px-10 py-4 bg-black text-white font-black uppercase text-xs rounded-full shadow-2xl border-b-[8px] border-zinc-900 hover:scale-105 transition-all"
+            >
+                Download / Print PDF
+            </button>
+          </div>
         </div>
 
         <div className="max-w-4xl mx-auto border-[1px] border-black/10 p-16 rounded-[2rem] shadow-sm relative overflow-hidden bg-white">

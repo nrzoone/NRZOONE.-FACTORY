@@ -47,6 +47,20 @@ const CuttingPanel = ({
   });
   const [printSlip, setPrintSlip] = useState(null);
 
+  // Yield Optimizer State
+  const [optimizer, setOptimizer] = useState({ rollWidth: 60, pieceWidth: 22 });
+  const optimization = React.useMemo(() => {
+    const r = Number(optimizer.rollWidth) || 60;
+    const p = Number(optimizer.pieceWidth) || 22;
+    const count = Math.floor(r / p);
+    const waste = r > 0 ? Math.round(((r - (count * p)) / r) * 100) : 0;
+    return { 
+      count, 
+      waste, 
+      rating: waste < 10 ? 'ELITE' : waste < 20 ? 'OPTIMAL' : 'REDUCIBLE' 
+    };
+  }, [optimizer]);
+
   const uniqueLots = React.useMemo(() => {
     const lots = [];
     (masterData.cuttingStock || []).forEach((c) => {
@@ -216,172 +230,101 @@ const CuttingPanel = ({
   };
 
   if (printSlip) {
-    const SlipCard = ({ copyTitle }) => {
-      const rate = masterData.workerWages?.["cutting"] || 0;
-
-      return (
-        <div
-          className="w-full h-full flex-1 border-4 border-black bg-white relative overflow-hidden flex flex-col justify-center text-black italic font-outfit"
-          style={{ padding: "10mm 12mm" }}
-        >
-          {/* Watermark Logo */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.05] -rotate-12 pointer-events-none">
-            <img
-              src={logoBlack}
-              alt=""
-              className="w-[600px] h-[600px] opacity-[0.04] -rotate-12 pointer-events-none mix-blend-multiply"
-            />
-          </div>
-          <div className="relative z-10 w-full h-full flex flex-col gap-4">
-            <div className="flex items-center justify-between border-b-2 border-black/10 pb-4">
-              <div className="flex items-center gap-5">
-                <img
-                  src={logoBlack}
-                  alt="NRZO0NE"
-                  className="w-14 h-14 object-contain mix-blend-multiply"
-                />
+    const SlipCard = ({ copyTitle }) => (
+      <ConfigProvider theme={QR_Slip_Theme}>
+        <div className="w-full bg-white flex flex-col relative overflow-hidden border-2 border-black p-12" style={{ height: '148.5mm' }}>
+             <div className="flex justify-between items-start border-b-4 border-black pb-8 mb-8">
                 <div>
-                  <h1 className="text-2xl font-black italic tracking-tighter leading-none">
-                    NRZO0NE
-                  </h1>
-                  <p className="text-xs font-black uppercase tracking-[0.4em] text-slate-600">
-                    CUTTING DIVISION
-                  </p>
+                   <h1 className="text-4xl font-black tracking-tighter uppercase leading-none">NRZO0NE</h1>
+                   <p className="text-[10px] font-black uppercase tracking-[0.6em] text-slate-400 mt-2">PRODUCTION UNIT • CUTTING</p>
                 </div>
-              </div>
-              <div className="bg-emerald-600 text-white px-6 py-3 rounded-2xl shadow-2xl relative overflow-hidden">
-                <p className="text-[9px] font-black uppercase text-white/40 mb-1">
-                  লট নম্বর (Lot No)
-                </p>
-                <p className="text-2xl font-black italic text-white leading-none">
-                  #{printSlip.lotNo}
-                </p>
-              </div>
-            </div>
+                <div className="text-right">
+                   <p className="text-xl font-black uppercase tracking-widest italic decoration-double">LOT #{printSlip.lotNo}</p>
+                   <p className="text-sm font-black text-slate-400 mt-1">{printSlip.date}</p>
+                </div>
+             </div>
 
-            <div className="flex-1 flex flex-col justify-between">
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-4 rounded-2xl border-2 border-slate-100">
-                    <p className="text-[9px] font-black uppercase text-slate-600 mb-1">
-                      কাটার (Cutter)
-                    </p>
-                    <p className="text-2xl font-black italic text-black uppercase">
-                      {printSlip.cutterName}
-                    </p>
+             <div className="flex-1 flex flex-col justify-start gap-8">
+                  <div className="grid grid-cols-2 gap-8">
+                      <div className="border-4 border-black p-6 bg-slate-50 rounded-[2rem]">
+                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">DESIGN / MODEL</p>
+                          <p className="text-3xl font-black uppercase truncate">{printSlip.design}</p>
+                      </div>
+                      <div className="border-4 border-black p-6 bg-slate-50 rounded-[2rem]">
+                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">AUTHORIZED CUTTER</p>
+                          <p className="text-3xl font-black uppercase truncate">{printSlip.cutterName}</p>
+                      </div>
                   </div>
-                  <div className="p-4 rounded-2xl border-2 border-slate-100">
-                    <p className="text-[9px] font-black uppercase text-slate-600 mb-1">
-                      তারিখ (Date)
-                    </p>
-                    <p className="text-2xl font-black italic text-black">
-                      {printSlip.date}
-                    </p>
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="p-3 rounded-xl border border-slate-100">
-                    <p className="text-[8px] font-black text-slate-600 uppercase">
-                      ডিজাইন (Design)
-                    </p>
-                    <p className="text-lg font-black italic text-black">
-                      {printSlip.design}
-                    </p>
+                  <div className="border-4 border-black rounded-[2.5rem] overflow-hidden flex-1">
+                      <table className="w-full h-full text-left border-collapse">
+                          <thead className="bg-black text-[10px] text-white font-black uppercase tracking-widest">
+                              <tr>
+                                  <th className="px-6 py-3 border-b-2 border-black">SIZE / আকার</th>
+                                  <th className="px-6 py-3 border-b-2 border-black">BORKA (PCS)</th>
+                                  <th className="px-6 py-3 border-b-2 border-black">HIJAB (PCS)</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              {(printSlip.sizes || []).map((s, idx) => (
+                                  <tr key={idx} className="border-b-2 border-black/5 last:border-0 font-black italic">
+                                      <td className="px-6 py-4 text-2xl uppercase tracking-tighter">{s.size}</td>
+                                      <td className="px-6 py-4 text-4xl">{s.borka || '-'}</td>
+                                      <td className="px-6 py-4 text-4xl">{s.hijab || '-'}</td>
+                                  </tr>
+                              ))}
+                          </tbody>
+                      </table>
                   </div>
-                  <div className="p-3 rounded-xl border border-slate-100">
-                    <p className="text-[8px] font-black text-slate-600 uppercase">
-                      কালার (Color)
-                    </p>
-                    <p className="text-lg font-black italic text-black">
-                      {printSlip.color || "N/A"}
-                    </p>
-                  </div>
-                  <div className="p-3 rounded-xl border border-slate-100">
-                    <p className="text-[8px] font-black text-slate-600 uppercase">
-                      সাইজ (Size)
-                    </p>
-                    <p className="text-lg font-black italic text-black">
-                      {printSlip.size}
-                    </p>
-                  </div>
-                </div>
+             </div>
 
-                <div className="grid grid-cols-2 gap-4 py-2">
-                  <div className="bg-rose-50 p-6 rounded-3xl border-2 border-rose-100 text-center relative">
-                    <p className="text-[9px] font-black uppercase mb-1 text-rose-400">
-                      বোরকা (Borka)
-                    </p>
-                    <p className="text-3xl font-black italic text-rose-600 leading-none">
-                      {printSlip.borka}
-                    </p>
+             <div className="mt-8 pt-8 flex justify-between items-center border-t-2 border-dashed border-slate-200">
+                  <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-black rounded flex items-center justify-center p-2">
+                        <img src={logoWhite} className="w-full h-full object-contain" alt="NR" />
+                      </div>
+                      <div className="text-right flex items-center gap-6">
+                           <div className="flex gap-10">
+                                <div className="text-center">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">TOTAL B</p>
+                                    <p className="text-2xl font-black italic">{(printSlip.sizes || []).reduce((n, s) => n + Number(s.borka || 0), 0)}</p>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">TOTAL H</p>
+                                    <p className="text-2xl font-black italic">{(printSlip.sizes || []).reduce((n, s) => n + Number(s.hijab || 0), 0)}</p>
+                                </div>
+                           </div>
+                           <QRCode value={printSlip.lotNo} size={80} bordered={false} style={{ padding: 0 }} />
+                      </div>
                   </div>
-                  <div className="bg-teal-50 p-6 rounded-3xl border-2 border-teal-100 text-center relative">
-                    <p className="text-[9px] font-black uppercase mb-1 text-teal-400">
-                      হিজাব (Hijab)
-                    </p>
-                    <p className="text-3xl font-black italic text-teal-600 leading-none">
-                      {printSlip.hijab}
-                    </p>
+                  <div className="px-12 py-4 bg-black text-white rounded-[2rem] font-black uppercase tracking-[0.4em] italic text-xl shadow-2xl">
+                      {copyTitle}
                   </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col items-center gap-3 pt-4 border-t-2 border-slate-50/10">
-                <div className="text-center">
-                  <p className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-500">
-                    NRZO0NE Smart Track™
-                  </p>
-                  <p className="text-[7px] font-black text-slate-400 mt-1 uppercase italic">
-                    {printSlip.id}
-                  </p>
-                </div>
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-400 border-t-2 border-black/5 pt-3 w-full text-center">
-                  CUTTING UNIT - {copyTitle}
-                </p>
-              </div>
-            </div>
-          </div>
+             </div>
         </div>
-      );
-    };
+      </ConfigProvider>
+    );
 
     return (
       <div className="min-h-screen bg-white text-black italic font-outfit py-10 print:py-0 print:bg-white">
         <style>{`
-                    @media print { 
-                        .no-print { display: none !important; } 
-                        body { background: white !important; margin: 0; padding: 0; }
-                        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-                        @page { size: A4 portrait; margin: 0; }
-                    }
-                `}</style>
-        <div className="no-print flex justify-between items-center mb-6 w-[210mm] mx-auto bg-white p-6 rounded-2xl shadow-xl border-4 border-black font-black">
-          <button
-            onClick={() => setPrintSlip(null)}
-            className="bg-slate-50 text-slate-600 px-5 py-3 uppercase text-xs rounded-full hover:bg-black hover:text-white transition-all"
-          >
-            Cancel
-          </button>
-          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest hidden md:block">
-            Full A4 Page
-          </p>
-          <button
-            onClick={() => window.print()}
-            className="bg-black text-white px-5 py-3 rounded-full uppercase text-xs shadow-2xl flex items-center gap-3 active:scale-95 transition-all"
-          >
-            <Printer size={18} /> Print Full A4
+          @media print { 
+              .no-print { display: none !important; } 
+              body { background: white !important; margin: 0; padding: 0; }
+              @page { size: A4 portrait; margin: 0; }
+          }
+        `}</style>
+        <div className="no-print flex justify-between items-center mb-6 w-[210mm] mx-auto bg-white p-6 rounded-[2.5rem] shadow-xl border-4 border-black font-black">
+          <button onClick={() => setPrintSlip(null)} className="bg-slate-50 text-slate-600 px-10 py-5 uppercase text-xs rounded-full hover:bg-black hover:text-white transition-all">Cancel</button>
+          <button onClick={() => window.print()} className="bg-black text-white px-10 py-5 rounded-full uppercase text-xs shadow-2xl flex items-center gap-3 active:scale-95 transition-all">
+            <Printer size={18} /> Print Job
           </button>
         </div>
-
-        <div className="w-[210mm] h-[297mm] mx-auto bg-white shadow-2xl flex flex-col print:w-full print:h-[100vh] print:shadow-none box-border">
-          <SlipCard copyTitle="WORKER COPY" />
-          <div className="w-full border-t-4 border-dashed border-slate-300 relative flex justify-center py-0 shrink-0 select-none opacity-60 z-20">
-            <span className="absolute top-1/2 -translate-y-1/2 bg-white px-4 py-1 text-[8px] font-black uppercase tracking-[0.5em] text-slate-500 border-2 border-slate-200 rounded-full">
-              ✂ এখান থেকে কাটুন • Cut Here
-            </span>
-          </div>
-          <SlipCard copyTitle="FACTORY COPY" />
+        
+        <div className="w-[210mm] min-h-[297mm] mx-auto bg-white border border-gray-100 overflow-hidden relative">
+          <SlipCard copyTitle="MASTER COPY" />
+          <div className="h-6 w-full border-t-4 border-dashed border-slate-200"></div>
+          <SlipCard copyTitle="RECIPIENT COPY" />
         </div>
       </div>
     );
@@ -407,19 +350,32 @@ const CuttingPanel = ({
           </div>
         </div>
         <div className="flex items-center gap-6 w-full md:w-auto">
-          <div className="bg-white px-6 py-3 rounded-2xl border border-slate-100 shadow-sm hidden md:block">
+          <div className="bg-white dark:bg-zinc-900 px-6 py-3 rounded-2xl border border-slate-100 dark:border-zinc-800 shadow-sm hidden md:block">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Lot Intelligence</p>
-            <p className="text-2xl font-black italic text-black leading-none uppercase">
+            <p className="text-2xl font-black italic text-black dark:text-white leading-none uppercase">
                 {uniqueLots.length} <span className="text-[10px] text-slate-300 ml-1">Lots</span>
             </p>
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="black-button px-8 py-4 text-[11px] flex-1 md:flex-none justify-center"
-          >
-            <Plus size={16} strokeWidth={4} /> নতুন এন্ট্রি
-          </button>
         </div>
+      </div>
+
+      {/* Unified Floating Filter Bar */}
+      <div className="floating-header-group mb-12 p-2 dark:bg-zinc-900 border-none shadow-2xl">
+          <div className="flex flex-col lg:flex-row items-center gap-4 w-full">
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-black/50 p-1.5 rounded-2xl w-full lg:w-auto">
+                  <button className="px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-black text-white dark:bg-white dark:text-black shadow-lg">চলমান</button>
+              </div>
+              
+              <div className="flex-1 relative w-full group">
+                  <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none text-slate-300 group-focus-within:text-black dark:group-focus-within:text-white transition-colors">
+                      <Search size={16} />
+                  </div>
+                  <input
+                      placeholder="সার্চ লট বা ডিজাইন নম্বর..."
+                      className="w-full bg-slate-50 dark:bg-black/20 h-14 rounded-2xl pl-16 pr-8 text-xs font-black uppercase tracking-widest italic outline-none border border-transparent focus:border-black/10 dark:focus:border-white/10 transition-all text-black dark:text-white"
+                  />
+              </div>
+          </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
@@ -644,7 +600,6 @@ const CuttingPanel = ({
           </div>
 
           <div className="space-y-8">
-            {/* Title for list */}
             <div className="flex items-center justify-between px-6">
               <h3 className="text-2xl font-black uppercase italic tracking-tighter text-black">
                 Production <span className="text-slate-300">Artifacts</span>
@@ -737,298 +692,162 @@ const CuttingPanel = ({
             </div>
             <div className="w-8 h-8 rounded-full border-4 border-slate-100 border-t-black animate-spin"></div>
           </div>
+
+          <div className="bg-black text-white rounded-[4rem] p-10 md:p-12 shadow-3xl relative overflow-hidden group italic">
+            <div className="relative z-10 space-y-10">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <h3 className="text-3xl font-black italic tracking-tighter uppercase leading-none">Yield Optimizer</h3>
+                        <p className="text-[9px] font-black uppercase text-white/40 tracking-[0.4em] mt-3">Advanced Waste Reduction Engine</p>
+                    </div>
+                    <div className="p-4 bg-white/10 rounded-2xl">
+                        <Scissors size={24} className="text-emerald-500" />
+                    </div>
+                </div>
+
+                <div className="space-y-6">
+                    <div className="p-6 bg-white/5 rounded-3xl border border-white/10">
+                        <label className="text-[8px] font-black uppercase tracking-widest text-white/40 mb-3 block">Roll Width (Inches)</label>
+                        <input 
+                            type="number" 
+                            className="bg-transparent border-none text-4xl font-black italic w-full outline-none text-white focus:text-emerald-500 transition-colors" 
+                            value={optimizer.rollWidth}
+                            onChange={e => setOptimizer(p => ({ ...p, rollWidth: e.target.value }))}
+                        />
+                    </div>
+                    <div className="p-6 bg-white/5 rounded-3xl border border-white/10">
+                        <label className="text-[8px] font-black uppercase tracking-widest text-white/40 mb-3 block">Design Width (Inches)</label>
+                        <input 
+                            type="number" 
+                            className="bg-transparent border-none text-4xl font-black italic w-full outline-none text-white focus:text-emerald-500 transition-colors" 
+                            value={optimizer.pieceWidth}
+                            onChange={e => setOptimizer(p => ({ ...p, pieceWidth: e.target.value }))}
+                        />
+                    </div>
+                </div>
+
+                <div className="pt-6 border-t border-white/10 space-y-6">
+                    <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Efficiency Rating</span>
+                        <span className={`text-xl font-black italic ${optimization.rating === 'ELITE' ? 'text-emerald-400' : optimization.rating === 'OPTIMAL' ? 'text-emerald-500' : 'text-amber-500'}`}>{optimization.rating}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="p-5 bg-white/5 rounded-3xl text-center">
+                            <p className="text-[8px] font-black uppercase text-white/40 mb-1">Max Pieces</p>
+                            <p className="text-2xl font-black italic">{optimization.count} / Layer</p>
+                        </div>
+                        <div className="p-5 bg-white/5 rounded-3xl text-center">
+                            <p className="text-[8px] font-black uppercase text-white/40 mb-1">Waste Factor</p>
+                            <p className="text-2xl font-black italic">{optimization.waste}%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <Scissors className="absolute bottom-[-10%] right-[-5%] text-white opacity-[0.03]" size={200} />
+          </div>
         </div>
       </div>
 
-      {/* MODALS */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-xl z-[150] flex items-start md:items-center justify-center p-2 md:p-3 overflow-y-auto">
-          <div className="bg-white rounded-lg md:rounded-2xl w-full max-w-4xl border-2 border-black shadow-3xl animate-fade-up my-auto flex flex-col text-black h-auto">
-            <div className="p-5 md:p-6 border-b border-slate-100 flex justify-between items-center bg-gray-50 flex-shrink-0 italic">
-              <div className="flex items-center gap-4 md:gap-6">
-                <div className="p-3 md:p-4 bg-black text-white rounded-2xl shadow-xl rotate-2">
-                  <Plus size={32} strokeWidth={3} />
-                </div>
-                <div>
-                  <h3 className="font-black uppercase text-xl md:text-3xl tracking-tighter leading-none">
-                    কাটিং এন্ট্রি
-                  </h3>
-                  <p className="text-[7px] md:text-[8px] text-slate-600 font-black uppercase tracking-[0.2em] md:tracking-[0.4em] mt-1">
-                    Advanced Production Injection
-                  </p>
-                </div>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-3xl z-[250] flex items-start md:items-center justify-center p-2 md:p-4 overflow-y-auto">
+          <div className="bg-white w-full max-w-5xl my-auto rounded-[2.5rem] border-2 border-black shadow-3xl p-6 md:p-12 space-y-10 animate-fade-up text-black italic relative font-outfit uppercase">
+            <button onClick={() => setShowModal(false)} className="absolute top-8 right-8 p-4 bg-slate-50 hover:bg-black hover:text-white rounded-full transition-all z-10 border border-slate-100 shadow-sm"><X size={24} /></button>
+            
+            <div className="text-center space-y-3">
+              <div className="mx-auto w-14 h-14 bg-black text-white rounded-2xl flex items-center justify-center shadow-2xl rotate-3">
+                <Scissors size={32} />
               </div>
-              <button
-                onClick={() => {
-                  setShowModal(false);
-                  setEntryData({
-                    design: "",
-                    color: "",
-                    cutterName: "",
-                    lotNo: nextLotNo,
-                    date: new Date().toISOString().split("T")[0],
-                    sizes: [{ size: "", borka: "", hijab: "" }],
-                  });
-                }}
-                className="p-3 md:p-4 bg-white border border-slate-100 rounded-full hover:bg-black hover:text-white transition-all text-black shadow-sm flex items-center justify-center"
-              >
-                <X size={24} />
-              </button>
+              <h3 className="text-4xl font-black tracking-tighter uppercase leading-none">Cutting <span className="text-slate-400">Entry</span></h3>
+              <p className="inline-block px-4 py-1 bg-slate-100 text-slate-500 rounded-full text-[10px] font-black uppercase tracking-widest">LOT REGISTRATION MODE</p>
             </div>
-            <div className="p-4 md:p-5 space-y-8 md:space-y-10 overflow-y-auto flex-1 italic">
-              <div className="bg-slate-50/50 p-4 md:p-5 rounded-xl border border-slate-50 space-y-6 md:space-y-8">
-                <div className="flex items-center gap-3 mb-1">
-                  <div className="w-1 h-6 bg-black rounded-full"></div>
-                  <h4 className="text-sm md:text-base font-black uppercase tracking-widest text-black">
-                    ১. মাস্টার ও ডিজাইন (Identity)
-                  </h4>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-4">
-                      Cutting Date
-                    </label>
-                    <input
-                      type="date"
-                      className="w-full bg-black text-white px-6 py-4 rounded-lg border-none font-black text-xs outline-none focus:ring-2 focus:ring-white/20"
-                      value={entryData.date}
-                      onChange={(e) =>
-                        setEntryData((p) => ({ ...p, date: e.target.value }))
-                      }
-                    />
-                  </div>
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-4">
-                      Master Name / কার মাল
-                    </label>
-                    <select
-                      className="flex-1 bg-slate-50 px-6 py-4 rounded-lg border-2 border-slate-100 font-black text-xs outline-none focus:border-black transition-all appearance-none"
-                      value={entryData.cutterName}
-                      onChange={(e) =>
-                        setEntryData((p) => ({
-                          ...p,
-                          cutterName: e.target.value,
-                        }))
-                      }
-                    >
-                      <option value="">Select Master</option>
-                      {(masterData.cutters || []).map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-2 md:space-y-3">
-                    <label className="text-[10px] md:text-[11px] font-black text-slate-600 uppercase ml-4 tracking-widest">
-                      ডিজাইন (Style)
-                    </label>
-                    <select
-                      className="form-input text-base md:text-lg font-black uppercase py-3 md:py-4 bg-white border border-slate-100 rounded-xl md:rounded-2xl text-black shadow-sm"
-                      value={entryData.design}
-                      onChange={(e) =>
-                        setEntryData((p) => ({ ...p, design: e.target.value }))
-                      }
-                    >
-                      <option value="">পছন্দ করুন</option>
-                      {(masterData.designs || []).map((d) => (
-                        <option key={d.name} value={d.name}>
-                          {d.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-2 md:space-y-3">
-                    <label className="text-[10px] md:text-[11px] font-black text-slate-600 uppercase ml-4 tracking-widest">
-                      কালার (Color)
-                    </label>
-                    <select
-                      className="form-input text-base md:text-lg font-black uppercase py-3 md:py-4 bg-white border border-slate-100 rounded-xl md:rounded-2xl text-black shadow-sm"
-                      value={entryData.color}
-                      onChange={(e) =>
-                        setEntryData((p) => ({ ...p, color: e.target.value }))
-                      }
-                    >
-                      <option value="">পছন্দ করুন</option>
-                      {(masterData.colors || []).map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="space-y-2 md:space-y-3">
-                  <label className="text-[10px] md:text-[11px] font-black text-slate-600 uppercase ml-4 tracking-widest">
-                    লট নম্বর (Lot Number)
-                  </label>
-                  <div className="relative group">
-                    <input
-                      type="text"
-                      list="cutting-lots"
-                      placeholder={`LOT NO (e.g. ${nextLotNo})`}
-                      className="form-input text-base md:text-lg font-black uppercase py-3 md:py-4 bg-black text-white border-none rounded-xl md:rounded-2xl shadow-xl focus:ring-4 focus:ring-emerald-500/20 italic px-6 md:px-8 h-12 md:h-16 w-full"
-                      value={entryData.lotNo}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const lot = uniqueLots.find((l) => l.lotNo === val);
-                        if (lot) {
-                          setEntryData((p) => ({
-                            ...p,
-                            lotNo: val,
-                            design: lot.design,
-                            color: lot.color,
-                          }));
-                        } else {
-                          setEntryData((p) => ({ ...p, lotNo: val }));
-                        }
-                      }}
-                    />
-                    <datalist id="cutting-lots">
-                      <option value={nextLotNo}>Next: {nextLotNo}</option>
-                      {uniqueLots.map((l) => (
-                        <option key={l.lotNo} value={l.lotNo}>
-                          {l.design} | {l.color}
-                        </option>
-                      ))}
-                    </datalist>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setEntryData((p) => ({ ...p, lotNo: nextLotNo }))
-                      }
-                      className="absolute right-3 md:right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white px-3 md:px-5 py-1 md:py-2 rounded-lg text-[8px] md:text-[10px] font-black uppercase tracking-widest border border-white/10 shadow-lg"
-                    >
-                      Auto Next
-                    </button>
-                  </div>
-                </div>
-              </div>
 
-              <div className="bg-slate-50/50 p-4 md:p-5 rounded-2xl md:rounded-2xl border border-slate-50 space-y-6 md:space-y-8">
-                <div className="flex items-center gap-3 mb-1">
-                  <div className="w-1 h-6 bg-emerald-500 rounded-full"></div>
-                  <h4 className="text-sm md:text-base font-black uppercase tracking-widest text-emerald-600">
-                    ২. সাইজ ও সংখ্যা (Size & Quantity)
-                  </h4>
-                </div>
-                <div className="flex justify-between items-center border-b border-slate-100 pb-4 px-2">
-                  <p className="text-[8px] md:text-[9px] font-bold text-slate-600 uppercase italic">
-                    সব সাইজের মাল একসাথেই এন্ট্রি দিন
-                  </p>
-                  <button
-                    onClick={handleAddSizeRow}
-                    className="flex items-center gap-2 px-5 py-2 bg-emerald-500 text-white border-none rounded-full text-[8px] md:text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-md"
-                  >
-                    <Plus size={14} /> নতুন সাইজ
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-5">
-                  {entryData.sizes.map((row, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-white p-4 md:p-5 rounded-lg md:rounded-xl border border-slate-100 flex flex-col gap-3 shadow-sm relative group/size hover:border-black transition-all"
-                    >
-                      <div className="space-y-1">
-                        <label className="text-[8px] font-black text-slate-600 uppercase ml-1">
-                          Size
-                        </label>
-                        <select
-                          className="w-full text-[10px] md:text-xs font-black uppercase bg-slate-50 border-none rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-slate-100 italic"
-                          value={row.size}
-                          onChange={(e) =>
-                            handleSizeChange(idx, "size", e.target.value)
-                          }
-                        >
-                          <option value="">--</option>
-                          {(masterData.sizes || []).map((s) => (
-                            <option key={s} value={s}>
-                              {s}
-                            </option>
-                          ))}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                <div className="lg:col-span-4 space-y-6">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-4">Authorized Cutter</label>
+                        <select className="premium-input bg-black text-white h-16 w-full rounded-2xl px-6 font-black text-sm uppercase appearance-none" value={entryData.cutterName} onChange={e => setEntryData(p => ({ ...p, cutterName: e.target.value }))}>
+                            <option value="">-- SELECT WORKER --</option>
+                            {(masterData.workerCategories?.cutting || []).map(w => <option key={w} value={w}>{w}</option>)}
                         </select>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-1">
-                          <label className="text-[7px] md:text-[8px] font-black text-slate-600 uppercase ml-1 block text-center">
-                            বোরকা
-                          </label>
-                          <input
-                            type="number"
-                            className="w-full text-center font-black text-sm md:text-base bg-slate-50 border-none rounded-lg py-2 outline-none focus:ring-1 focus:ring-slate-100"
-                            placeholder="0"
-                            value={row.borka}
-                            onChange={(e) =>
-                              handleSizeChange(idx, "borka", e.target.value)
-                            }
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[7px] md:text-[8px] font-black text-emerald-500 uppercase ml-1 block text-center">
-                            হিজাব
-                          </label>
-                          <input
-                            type="number"
-                            className="w-full text-center font-black text-sm md:text-base bg-emerald-50/20 border-none rounded-lg py-2 outline-none focus:ring-1 focus:ring-emerald-100 text-emerald-600"
-                            placeholder="0"
-                            value={row.hijab}
-                            onChange={(e) =>
-                              handleSizeChange(idx, "hijab", e.target.value)
-                            }
-                          />
-                        </div>
-                      </div>
-                      {entryData.sizes.length > 1 && (
-                        <button
-                          onClick={() => handleRemoveSizeRow(idx)}
-                          className="absolute -top-2 -right-2 p-1.5 bg-white text-rose-500 border border-slate-100 rounded-full shadow-md opacity-0 group-hover/size:opacity-100 transition-opacity hover:bg-rose-500 hover:text-white"
-                        >
-                          <Minus size={10} />
-                        </button>
-                      )}
                     </div>
-                  ))}
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-4">Design / Model</label>
+                        <select className="premium-input bg-slate-50 border-slate-100 h-16 w-full rounded-2xl px-6 font-black text-sm uppercase appearance-none" value={entryData.design} onChange={e => setEntryData(p => ({ ...p, design: e.target.value }))}>
+                            <option value="">-- SELECT DESIGN --</option>
+                            {(masterData.designs || []).map(d => <option key={d.name} value={d.name}>{d.name}</option>)}
+                        </select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-4">Lot ID</label>
+                            <input className="premium-input bg-slate-50 border-slate-100 h-16 w-full rounded-2xl px-6 font-black text-sm text-center" value={entryData.lotNo} onChange={e => setEntryData(p => ({ ...p, lotNo: e.target.value }))} />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-4">Date</label>
+                            <input type="date" className="premium-input bg-slate-50 border-slate-100 h-16 w-full rounded-2xl px-6 font-black text-[10px] text-center" value={entryData.date} onChange={e => setEntryData(p => ({ ...p, date: e.target.value }))} />
+                        </div>
+                    </div>
                 </div>
-              </div>
-            </div>
-            <div className="p-4 border-t border-slate-100 bg-gray-50 flex-shrink-0 flex justify-end gap-3">
-              <button
-                onClick={() => setShowModal(false)}
-                className="px-5 py-2 bg-white border border-slate-200 rounded-xl font-black text-[9px] uppercase tracking-widest text-slate-600 hover:text-black transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleAddCutting(false)}
-                className="px-8 py-2 bg-black text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg hover:bg-zinc-800 transition-all flex items-center justify-center gap-2"
-              >
-                SAVE ENTRY
-              </button>
-              <button
-                onClick={() => handleAddCutting(true)}
-                className="px-8 py-2 bg-indigo-600 text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-lg hover:bg-black transition-all flex items-center justify-center gap-2"
-              >
-                <Printer size={12} /> & PRINT
-              </button>
+
+                <div className="lg:col-span-8 flex flex-col bg-slate-50 p-8 rounded-[2rem] border border-slate-100">
+                    <div className="flex justify-between items-center mb-6">
+                        <label className="text-[10px] font-black uppercase text-black tracking-widest">Size Matrix Distribution</label>
+                        <button onClick={addSize} className="px-4 py-2 bg-black text-white rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:scale-105 transition-all"><Plus size={14} /> Add Pattern</button>
+                    </div>
+
+                    <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
+                        {entryData.sizes.map((s, i) => (
+                            <div key={i} className="grid grid-cols-12 gap-4 items-center animate-fade-in">
+                                <div className="col-span-3">
+                                    <select className="h-14 w-full bg-white border border-slate-200 rounded-xl px-4 font-black uppercase text-xs" value={s.size} onChange={e => handleSizeChange(i, 'size', e.target.value)}>
+                                        <option value="">SIZE</option>
+                                        {(masterData.sizes || []).map(sz => <option key={sz} value={sz}>{sz}</option>)}
+                                    </select>
+                                </div>
+                                <div className="col-span-4 bg-white border border-slate-200 rounded-xl px-4 h-14 flex items-center gap-2">
+                                    <p className="text-[8px] font-black text-slate-300">B</p>
+                                    <input type="number" className="bg-transparent w-full font-black text-xl outline-none" placeholder="0" value={s.borka} onChange={e => handleSizeChange(i, 'borka', e.target.value)} />
+                                </div>
+                                <div className="col-span-4 bg-white border border-slate-200 rounded-xl px-4 h-14 flex items-center gap-2">
+                                    <p className="text-[8px] font-black text-slate-300">H</p>
+                                    <input type="number" className="bg-transparent w-full font-black text-xl outline-none" placeholder="0" value={s.hijab} onChange={e => handleSizeChange(i, 'hijab', e.target.value)} />
+                                </div>
+                                <div className="col-span-1 flex justify-end">
+                                    <button onClick={() => removeSize(i)} className="p-3 text-slate-300 hover:text-rose-500 transition-colors"><Trash2 size={18} /></button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="mt-8 pt-6 border-t border-slate-200 flex justify-between items-center px-4">
+                        <p className="text-[10px] font-black uppercase text-slate-400">Aggregate Volume</p>
+                        <div className="flex gap-8">
+                            <div className="text-right">
+                                <p className="text-[9px] font-black text-slate-400 uppercase">Total Borka</p>
+                                <p className="text-2xl font-black">{entryData.sizes.reduce((sum, s) => sum + Number(s.borka || 0), 0)}</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-[9px] font-black text-slate-400 uppercase">Total Hijab</p>
+                                <p className="text-2xl font-black text-rose-500">{entryData.sizes.reduce((sum, s) => sum + Number(s.hijab || 0), 0)}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Print Slip is handled by early return at top */}
-
-      {/* Back Button Bottom */}
-      <div className="pt-20 pb-10 flex justify-center no-print">
+      <div className="flex justify-center pt-20">
         <button
           onClick={() => setActivePanel("Overview")}
-          className="group relative flex items-center gap-6 bg-white px-6 py-3 rounded-full border-4 border-slate-50 shadow-2xl hover:border-black transition-all duration-500"
+          className="group relative flex items-center gap-6 bg-white px-12 py-6 rounded-full border-4 border-slate-50 shadow-2xl hover:border-black transition-all duration-500"
         >
           <div className="p-3 bg-black text-white rounded-2xl group-hover:rotate-[-12deg] transition-transform">
             <ArrowLeft size={20} strokeWidth={3} />
           </div>
           <span className="text-lg font-black uppercase italic tracking-widest text-black">
-            Back to Dashboard
+            ড্যাশবোর্ডে ফিরে যান
           </span>
           <div className="absolute -inset-1 bg-black/5 blur-2xl rounded-full -z-10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
         </button>

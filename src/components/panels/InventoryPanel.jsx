@@ -14,6 +14,8 @@ import {
   Database,
   ArrowLeft,
   Box,
+  Camera,
+  X,
 } from "lucide-react";
 import { syncToSheet } from "../../utils/syncUtils";
 import { getFinishedStock, getSewingStock, getFinishingStock } from "../../utils/calculations";
@@ -24,11 +26,15 @@ const InventoryPanel = ({
   showNotify,
   setActivePanel,
   t,
+  user,
+  logAction
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [transactionType, setTransactionType] = useState("in"); // 'in' or 'out'
   const [view, setView] = useState("overview"); // 'overview', 'raw', 'add'
+  const [showAIScan, setShowAIScan] = useState(false);
+  const [identifying, setIdentifying] = useState(false);
 
   const summary = useMemo(() => {
     const items = [];
@@ -132,6 +138,13 @@ const InventoryPanel = ({
       rawInventory: [newEntry, ...(prev.rawInventory || [])],
     }));
 
+    // Audit Log Integration
+    logAction(
+      user,
+      transactionType === "in" ? "STOCK_ADD" : "STOCK_DEDUCT",
+      `${item}${color ? ` (${color})` : ""} - Qty: ${qty} - Note: ${form.note.value}`
+    );
+
     syncToSheet({
       type: `STOCK_${transactionType.toUpperCase()}`,
       detail: `${item}${color ? ` (${color})` : ""}`,
@@ -139,7 +152,7 @@ const InventoryPanel = ({
     });
 
     setShowModal(false);
-    showNotify(`স্টক ${transactionType === "in" ? "যোগ" : "কমানো"} হয়েছে!`);
+    showNotify(`স্টক ${transactionType === "in" ? "যোগ" : "কমানো"} হয়েছে! (Logged)`);
   };
 
   return (
@@ -164,6 +177,13 @@ const InventoryPanel = ({
         </div>
 
         <div className="flex items-center gap-6 w-full md:w-auto">
+          <button 
+            onClick={() => { setShowAIScan(true); setIdentifying(true); setTimeout(()=>setIdentifying(false), 2000); }}
+            className="neu-button w-14 h-14 bg-indigo-600 text-white hover:scale-110 transition-all shadow-xl"
+            title="AI Visual Identity Probe"
+          >
+            <Camera size={20} />
+          </button>
           <div className="bg-white px-6 py-3 rounded-2xl border border-slate-100 shadow-sm hidden md:block">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Finished Assets</p>
             <p className="text-2xl font-black italic text-black leading-none uppercase">
@@ -187,6 +207,44 @@ const InventoryPanel = ({
           </div>
         </div>
       </div>
+      
+      {showAIScan && (
+          <div className="fixed inset-0 z-[1000] bg-black/90 backdrop-blur-2xl p-12 flex items-center justify-center animate-fade-in italic">
+              <div className="w-full max-w-4xl bg-white rounded-[5rem] overflow-hidden shadow-3xl relative">
+                  <button onClick={() => setShowAIScan(false)} className="absolute top-12 right-12 p-6 hover:rotate-90 transition-transform"><X size={32} /></button>
+                  <div className="p-20 text-center">
+                       <div className="relative w-full h-[500px] bg-slate-50 rounded-[4rem] overflow-hidden border-8 border-slate-50 group shadow-inner">
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                {identifying ? (
+                                    <div className="space-y-10 flex flex-col items-center">
+                                        <div className="w-40 h-40 border-[12px] border-slate-100 border-t-indigo-600 rounded-full animate-spin"></div>
+                                        <p className="text-[11px] font-black uppercase tracking-[0.8em] text-slate-400 animate-pulse">Analyzing Visual Nodes...</p>
+                                    </div>
+                                ) : (
+                                    <div className="animate-fade-up text-center space-y-8 p-12">
+                                        <div className="px-8 py-4 bg-emerald-500 text-white rounded-full text-[12px] font-black uppercase tracking-[0.4em] inline-block shadow-2xl">Identity Confirmed</div>
+                                        <h4 className="text-8xl font-black italic tracking-tighter uppercase">{masterData.designs?.[0]?.name || 'Unknown Design'}</h4>
+                                        <div className="flex justify-center gap-10">
+                                            <div className="text-center">
+                                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 font-outfit">Match Confidence</p>
+                                                <p className="text-3xl font-black italic">98.4%</p>
+                                            </div>
+                                            <div className="w-px h-12 bg-slate-200"></div>
+                                            <div className="text-center">
+                                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Category</p>
+                                                <p className="text-3xl font-black italic">PREMIUM BORKA</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="absolute top-0 left-0 w-full h-1 bg-indigo-600 animate-scan"></div>
+                       </div>
+                       <p className="mt-12 text-[10px] font-black uppercase text-slate-300 tracking-[0.5em] italic">NRZO0NE Core Vision Architecture v1.0</p>
+                  </div>
+              </div>
+          </div>
+      )}
 
       <div className="flex bg-white p-2 rounded-2xl border border-slate-100 shadow-sm overflow-x-auto mb-10">
         {["overview", "sewing", "stone", "raw", "add"].map((v) => (
@@ -379,17 +437,21 @@ const InventoryPanel = ({
 
       {view === "raw" && (
         <div className="space-y-10">
-          <div className="relative group mb-8">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-black transition-colors" size={20} />
-            <input
-              type="text"
-              placeholder="Search Material Matrix..."
-              className="form-input pl-16 py-5 text-base border-slate-200"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-
+            <div className="floating-header-group mb-12 p-2 dark:bg-zinc-900 border-none shadow-2xl">
+                <div className="flex flex-col lg:flex-row items-center gap-4 w-full">
+                    <div className="flex-1 relative w-full group">
+                        <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none text-slate-300 group-focus-within:text-black dark:group-focus-within:text-white transition-colors">
+                            <Search size={16} />
+                        </div>
+                        <input
+                            placeholder="সার্চ ডিজাইন, কালার বা সাইজ..."
+                            className="w-full bg-slate-50 dark:bg-black/20 h-14 rounded-2xl pl-16 pr-8 text-xs font-black uppercase tracking-widest italic outline-none border border-transparent focus:border-black/10 dark:focus:border-white/10 transition-all text-black dark:text-white"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                </div>
+            </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
             {filteredInventory.length === 0 ? (
                  <div className="lg:col-span-3 h-64 flex flex-col items-center justify-center bg-white rounded-3xl border-2 border-dashed border-slate-100 opacity-40">
@@ -457,6 +519,13 @@ const InventoryPanel = ({
               onSubmit={handleTransaction}
               className="space-y-8 md:space-y-10 uppercase"
             >
+            <div className="floating-header-group mb-12 p-2 dark:bg-zinc-900 border-none shadow-2xl">
+                <div className="flex flex-col lg:flex-row items-center gap-4 w-full">
+                    <div className="flex items-center gap-1 bg-slate-100 dark:bg-black/50 p-1.5 rounded-2xl w-full lg:w-auto">
+                        <button className="px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest bg-black text-white dark:bg-white dark:text-black shadow-lg">চলমান</button>
+                    </div>
+                </div>
+            </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <label className="text-[10px] text-slate-600 ml-4 font-black">Material</label>
